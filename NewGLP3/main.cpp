@@ -113,6 +113,197 @@ void drawWings() {
     }glPopMatrix();
 }
 
+void drawNeckWithStackedSpheres() {
+    /*
+    curved neck with spheres stacking each other
+    */
+    int numSpheres = 200;        // Number of spheres in the neck
+    float baseRadius = 0.3f;    // Radius of the largest sphere at the base
+    float tipRadius = 0.1f;     // Radius of the smallest sphere at the tip
+    float neckLength = 1.5f;    // Total length of the neck
+    float neckCurve = 0.7f;     // Degree of the curve
+
+    glPushMatrix();
+    {
+        // Translate to the starting position of the neck
+        glTranslatef(0.0f, 0.5f, 0.3f);
+
+        for (int i = 0; i <= numSpheres; ++i) {
+            float t = (float)i / numSpheres;   // Parametric value [0, 1]
+            float angle = t * M_PI * neckCurve; // Curve angle for the sphere
+
+            // Compute neck curve points
+            float x = 0.0f;                     // Neck is centered in x
+            float y = neckLength * t;           // Linear progression along the length
+            float z = neckLength * sin(angle);  // Curve in the z direction
+
+            // Compute radius for this sphere (linear tapering)
+            float radius = baseRadius + t * (tipRadius - baseRadius);
+
+            // Place the sphere
+            glPushMatrix();
+            {
+                glTranslatef(x, y, z);
+                glutSolidSphere(radius, 20, 20);
+            }
+            glPopMatrix();
+        }
+
+        // Draw the head at the end of the neck
+        glTranslatef(0.0f, neckLength, neckLength * sin(M_PI * neckCurve));
+        glutSolidSphere(tipRadius * 1.5f, 30, 30); // Goose's head
+    }
+    glPopMatrix();
+}
+
+//tail (lighting bug)
+void drawTailWithTaperedTriangles() {
+    int numTriangles = 2000;      // Number of stacked triangles to create the tail
+    float baseWidth = 0.8f;     // Width of the base of the tail (widest point)
+    float tipWidth = 0.2f;      // Width at the tip of the tail (smallest point)
+    float baseThickness = 0.5f; // Thickness at the base of the tail
+    float tipThickness = 0.05f; // Thickness at the tip of the tail
+    float tailLength = 1.2f;    // Total length of the tail
+
+    glPushMatrix();
+    {
+        // Position the tail at the back of the body
+        glTranslatef(0.0f, -1.8f, 0.5f); // Adjust these values as needed for correct positioning
+        glRotatef(-180.0f, 0.0f, 1.0f, 0.0f); // Rotate the tail slightly upwards
+        glRotatef(30.0f, 1.0f, 0.0f, 0.0f);
+
+        // Stack triangles with decreasing thickness along the length of the tail
+        for (int i = 0; i < numTriangles; ++i) {
+            float t = (float)i / numTriangles;  // Parametric value [0, 1] for progression
+            float currentWidth = baseWidth + t * (tipWidth - baseWidth);  // Linearly interpolate width
+            float currentHeight = tailLength * (1 - t);  // Linearly decrease height along the length
+            float currentThickness = baseThickness + t * (tipThickness - baseThickness);  // Linearly decrease thickness
+
+            // Draw each thick triangle as a prism
+            glPushMatrix();
+            {
+                glTranslatef(0.0f, currentHeight, 0.0f);  // Move each triangle upwards
+
+                glBegin(GL_QUADS);
+
+                // Front face of the triangle
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);               // Top point (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left point (front)
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right point (front)
+
+                // Back face of the triangle
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);              // Top point (back)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left point (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right point (back)
+
+                glEnd();
+
+                // Draw connecting edges between the front and back faces to create thickness
+                glBegin(GL_QUADS);
+
+                // Left side connecting quad
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
+
+                // Right side connecting quad
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
+
+                // Bottom side connecting quad
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
+
+                glEnd();
+            }
+            glPopMatrix();
+        }
+    }
+    glPopMatrix();
+}
+
+//partially fixed lighting but not satisfied
+/*
+void drawTailWithTaperedTriangles() {
+    int numTriangles = 20;      // Number of stacked triangles to create the tail
+    float baseWidth = 0.8f;     // Width of the base of the tail (widest point)
+    float tipWidth = 0.2f;      // Width at the tip of the tail (smallest point)
+    float baseThickness = 0.2f; // Thickness at the base of the tail
+    float tipThickness = 0.05f; // Thickness at the tip of the tail
+    float tailLength = 1.2f;    // Total length of the tail
+
+    glPushMatrix();
+    {
+        // Position the tail at the back of the body
+        glTranslatef(0.0f, -1.0f, -0.8f); // Adjust these values as needed for correct positioning
+        glRotatef(-30.0f, 1.0f, 0.0f, 0.0f); // Rotate the tail slightly upwards
+
+        // Stack triangles with decreasing thickness along the length of the tail
+        for (int i = 0; i < numTriangles; ++i) {
+            float t = (float)i / numTriangles;  // Parametric value [0, 1] for progression
+            float currentWidth = baseWidth + t * (tipWidth - baseWidth);  // Linearly interpolate width
+            float currentHeight = tailLength * (1 - t);  // Linearly decrease height along the length
+            float currentThickness = baseThickness + t * (tipThickness - baseThickness);  // Linearly decrease thickness
+
+            // Draw each thick triangle as a prism
+            glPushMatrix();
+            {
+                glTranslatef(0.0f, currentHeight, 0.0f);  // Move each triangle upwards
+
+                glBegin(GL_QUADS);
+
+                // Front face of the triangle
+                glNormal3f(0.0f, 0.0f, 1.0f); // Normal pointing towards the viewer
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);               // Top point (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left point (front)
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right point (front)
+
+                // Back face of the triangle
+                glNormal3f(0.0f, 0.0f, -1.0f); // Normal pointing away from the viewer
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);              // Top point (back)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left point (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right point (back)
+
+                glEnd();
+
+                // Draw connecting edges between the front and back faces to create thickness
+                glBegin(GL_QUADS);
+
+                // Left side connecting quad
+                glNormal3f(-1.0f, 0.0f, 0.0f); // Normal pointing left
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
+
+                // Right side connecting quad
+                glNormal3f(1.0f, 0.0f, 0.0f); // Normal pointing right
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
+                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
+                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
+
+                // Bottom side connecting quad
+                glNormal3f(0.0f, -1.0f, 0.0f); // Normal pointing downward
+                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
+                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
+                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
+
+                glEnd();
+            }
+            glPopMatrix();
+        }
+    }
+    glPopMatrix();
+}
+*/
+
 void drawSphereWithFlatBottom(float radius, int stacks, int slices, float cutoff) {
     float cutoffZ = radius * cos(cutoff * M_PI); // Calculate cut-off height in sphere's coordinate
 
@@ -237,6 +428,19 @@ void display() {
         }
         glPopMatrix();
     }glPopMatrix();
+
+    glPushMatrix();
+    {
+        drawNeckWithStackedSpheres();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    {
+        drawTailWithTaperedTriangles();
+    }
+    glPopMatrix();
+
     glutSwapBuffers();
 }
 
