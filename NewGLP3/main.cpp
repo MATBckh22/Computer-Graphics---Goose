@@ -6,6 +6,112 @@ float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 5.0f; // Camera position
 float angleX = 0.0f, angleY = 0.0f, angleZ = 0.0f;                   // Rotation angles
 float zoom = 1.0f;                                    // Zoom level
 
+void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY, int sides, int rings, float startAngle, float sweepAngle) {
+    float ringDelta = 2.0f * M_PI / rings;       // Angle between each ring
+    float sideDelta = 2.0f * M_PI / sides;      // Angle between each side
+    float endAngle = startAngle + sweepAngle; // Calculate the end angle
+
+    for (float ringAngle = startAngle; ringAngle < endAngle; ringAngle += ringDelta) {
+        glBegin(GL_QUAD_STRIP);
+        for (int side = 0; side <= sides; ++side) {
+            float sideAngle = side * sideDelta;
+
+            // Compute vertices for the current ring
+            float x0 = (outerRadiusX + innerRadius * cos(sideAngle)) * cos(ringAngle);
+            float y0 = (outerRadiusY + innerRadius * cos(sideAngle)) * sin(ringAngle);
+            float z0 = innerRadius * sin(sideAngle);
+
+            // Compute vertices for the next ring
+            float x1 = (outerRadiusX + innerRadius * cos(sideAngle)) * cos(ringAngle + ringDelta);
+            float y1 = (outerRadiusY + innerRadius * cos(sideAngle)) * sin(ringAngle + ringDelta);
+            float z1 = innerRadius * sin(sideAngle);
+
+            // Define two points of the quad strip
+            glVertex3f(x0, y0, z0);
+            glVertex3f(x1, y1, z1);
+        }
+        glEnd();
+    }
+}
+
+void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, float rad, int segments) {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(cX, cY, cZ);
+    for (int i = 0; i <= segments; ++i) {
+        float angle = Cbegin + (rad * i / segments);
+        float x = cX + rX * cos(angle);
+        float y = cY + rY * sin(angle);
+        glVertex3f(x, y, cZ);
+    }
+    glEnd();
+}
+
+void drawWings() {
+    glutSolidTorus(0.08f, 0.5f, 30, 30);
+    GLUquadric* quad = gluNewQuadric();
+    glPushMatrix();
+    {
+        glTranslatef(0.0f, 0.0f, 0.08f);
+        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50);
+        glTranslatef(0.0f, 0.0f, 0.005f);
+        gluDisk(quad, 0.0, 0.5f, 30, 30);
+        glTranslatef(0.0f, 0.0f, -0.165f);
+        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50);
+         glTranslatef(0.0f, 0.0f, -0.005f);
+        gluDisk(quad, 0.0, 0.5f, 30, 30);
+    }glPopMatrix();
+    glPushMatrix();
+    {
+        glTranslatef(0.0f, 0.5f, 0.0f);
+        drawPartialTorus(0.08f, 1.9f, 1.0f, 30, 100, -M_PI/2, M_PI/2-0.08f);
+    }glPopMatrix();
+    glPushMatrix();
+    {
+        glTranslatef(0.0f, 0.5f, 0.0f);
+        glRotatef(90, 0.0f, 1.0f, 0.0f);
+        gluCylinder(quad, 0.08f, 0.08f, 2.1f, 30, 30);
+        glPushMatrix();
+        {
+            glTranslatef(0.0f, -0.21f, 1.5f);
+            glPushMatrix();
+            {
+                gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
+                glTranslatef(0.0f, 0.0f, 0.5f);
+                glutSolidSphere(0.13f, 30, 30);
+            }glPopMatrix();
+            glTranslatef(0.0f, -0.23f, -0.1f);
+            glPushMatrix();
+            {
+                gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
+                glTranslatef(0.0f, 0.0f, 0.5f);
+                glutSolidSphere(0.13f, 30, 30);
+            }glPopMatrix();
+            glTranslatef(0.0f, -0.23f, -0.2f);
+            glPushMatrix();
+            {
+                gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
+                glTranslatef(0.0f, 0.0f, 0.5f);
+                glutSolidSphere(0.13f, 30, 30);
+            }glPopMatrix();
+            glTranslatef(0.0f, -0.18f, -0.4f);
+            glPushMatrix();
+            {
+                glRotatef(5, 0.4f, 0.0f, 0.0f);
+                gluCylinder(quad, 0.08f, 0.13f, 0.6f, 30, 30);
+                glTranslatef(0.0f, 0.0f, 0.6f);
+                glutSolidSphere(0.13f, 30, 30);
+            }glPopMatrix();
+            glTranslatef(0.0f, -0.15f, -0.8f);
+            glPushMatrix();
+            {
+                glRotatef(5, 0.4f, 0.0f, 0.0f);
+                gluCylinder(quad, 0.08f, 0.13f, 1.0f, 30, 30);
+                glTranslatef(0.0f, 0.0f, 1.0f);
+                glutSolidSphere(0.13f, 30, 30);
+            }glPopMatrix();
+        }glPopMatrix();
+    }glPopMatrix();
+}
 
 void drawSphereWithFlatBottom(float radius, int stacks, int slices, float cutoff) {
     float cutoffZ = radius * cos(cutoff * M_PI); // Calculate cut-off height in sphere's coordinate
@@ -53,44 +159,84 @@ void drawSphereWithFlatBottom(float radius, int stacks, int slices, float cutoff
     glEnd();
 }
 
-void initLighting() {
+void setupLighting() {
+    GLfloat light_ambient[] = {0.2, 0.2, 0.2, 1.0};
+    GLfloat light_diffuse[] = {0.5, 0.5, 0.5, 1.0};
+    GLfloat light_specular[] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat light_position[] = {10.0, 10.0, 10.0, 1.0};
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+}
 
-    GLfloat lightPos[] = {0.0f, 5.0f, 5.0f, 1.0f};
-    GLfloat lightAmb[] = {0.2f, 0.2f, 0.2f, 1.0f};
-    GLfloat lightDiff[] = {0.8f, 0.8f, 0.8f, 1.0f};
-    GLfloat lightSpec[] = {1.0f, 1.0f, 1.0f, 1.0f};
+void setupMaterial() {
+    GLfloat mat_ambient[] = {0.1, 0.1, 0.1, 0.2};
+    GLfloat mat_diffuse[] = {0.4, 0.4, 0.4, 0.2};
+    GLfloat mat_specular[] = {0.7, 0.7, 0.7, 0.2};
+    GLfloat mat_shininess[] = {50.0};
 
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiff);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpec);
-
-    GLfloat matAmb[] = {0.3f, 0.3f, 0.3f, 1.0f};
-    GLfloat matDiff[] = {0.5f, 0.5f, 1.0f, 1.0f};
-    GLfloat matSpec[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    GLfloat matShininess[] = {50.0f};
-
-    glMaterialfv(GL_FRONT, GL_AMBIENT, matAmb);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiff);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, matSpec);
-    glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
+    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-
+    setupLighting();
+    //setupMaterial();
     // Adjust the camera
     glTranslatef(0.0f, 0.0f, -cameraZ); // Zoom
     glRotatef(angleX, 1.0f, 0.0f, 0.0f); // Rotate around X-axis
     glRotatef(angleY, 0.0f, 1.0f, 0.0f); // Rotate around Y-axis
     glRotatef(angleZ, 0.0f, 0.0f, 1.0f);
-    glScalef(0.8f*zoom, zoom, 0.55f*zoom);
-
-    drawSphereWithFlatBottom(1.0f, 20, 50, 0.7f); // Sphere with flat bottom starting at 80% height
-
+    glPushMatrix();
+    {
+        glScalef(0.8f*zoom, zoom, 0.55f*zoom);
+        drawSphereWithFlatBottom(1.2f, 20, 50, 0.7f);
+    }glPopMatrix(); // Sphere with flat bottom starting at 80% height
+    glPushMatrix();
+    {
+        glTranslatef(1.05f, 0.3f, 0.5f);
+        glPushMatrix();
+        {
+            glRotatef(90, 1.0f, 0.0f, 0.0f);
+            glRotatef(-90, 0.0f, 1.0f, 0.0f);
+            glRotatef(70, 0.0f, 0.0f, 1.0f);
+            drawWings();
+        }glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(0.0f, 0.0f, -0.4f);
+            glRotatef(90, 1.0f, 0.0f , 0.0f);
+            drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 2*M_PI/3);
+        }
+        glPopMatrix();
+    }glPopMatrix();
+    glPushMatrix();
+    {
+        glTranslatef(-1.05f, 0.3f, 0.5f);
+        glPushMatrix();
+        {
+            glRotatef(90, 1.0f, 0.0f, 0.0f);
+            glRotatef(-90, 0.0f, 1.0f, 0.0f);
+            glRotatef(70, 0.0f, 0.0f, 1.0f);
+            drawWings();
+        }glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(0.0f, 0.0f, -0.4f);
+            glRotatef(90, 1.0f, 0.0f , 0.0f);
+            drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -M_PI/6, 2*M_PI/3);
+        }
+        glPopMatrix();
+    }glPopMatrix();
     glutSwapBuffers();
 }
 
@@ -139,7 +285,7 @@ int main(int argc, char** argv) {
     glShadeModel(GL_SMOOTH);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
-    initLighting();
+
 
     glutMainLoop();
     return 0;
