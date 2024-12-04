@@ -3,8 +3,9 @@
 #include <cmath>
 
 float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 5.0f; // Camera position
-float angleX = 0.0f, angleY = 0.0f, angleZ = 0.0f;                   // Rotation angles
-float zoom = 1.0f;                                    // Zoom level
+float angleH  = 0.0f;
+int angleV = 0;               // Rotation angles
+float zoom = 7.0f;                                    // Zoom level
 
 void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY, int sides, int rings, float startAngle, float sweepAngle) {
     float ringDelta = 2.0f * M_PI / rings;       // Angle between each ring
@@ -32,6 +33,7 @@ void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY,
         }
         glEnd();
     }
+
 }
 
 void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, float rad, int segments) {
@@ -168,7 +170,7 @@ void drawTailWithTaperedTriangles() {
     glPushMatrix();
     {
         // Position the tail at the back of the body
-        glTranslatef(0.0f, -1.8f, 0.5f); // Adjust these values as needed for correct positioning
+        glTranslatef(0.0f, -1.7f, 0.5f); // Adjust these values as needed for correct positioning
         glRotatef(-180.0f, 0.0f, 1.0f, 0.0f); // Rotate the tail slightly upwards
         glRotatef(30.0f, 1.0f, 0.0f, 0.0f);
 
@@ -304,55 +306,58 @@ void drawTailWithTaperedTriangles() {
 }
 */
 
-void drawSphereWithFlatBottom(float radius, int stacks, int slices, float cutoff) {
-    float cutoffZ = radius * cos(cutoff * M_PI); // Calculate cut-off height in sphere's coordinate
+void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int slices, int stacks, float cutoff) {
+    float cutoffY = radiusY * cos(cutoff * M_PI); // Calculate cut-off height in sphere's coordinate
 
+    // Draw the main part of the sphere
     for (int i = 0; i <= stacks; ++i) {
         float theta1 = i * M_PI / stacks;
         float theta2 = (i + 1) * M_PI / stacks;
 
-        // Calculate z for the current and next stack
-        float z1 = radius * cos(theta1);
-        float z2 = radius * cos(theta2);
+        // Calculate y for the current and next stack
+        float y1 = radiusY * cos(theta1);
+        float y2 = radiusY * cos(theta2);
 
         // Skip stacks that go below the cutoff
-        if (z1 < cutoffZ) break;
+        if (y1 < cutoffY) break;
 
         glBegin(GL_QUAD_STRIP);
         for (int j = 0; j <= slices; ++j) {
             float phi = j * 2 * M_PI / slices;
 
             // Vertex 1
-            float x1 = radius * sin(theta1) * cos(phi);
-            float y1 = radius * sin(theta1) * sin(phi);
+            float x1 = radiusX * sin(theta1) * cos(phi);
+            float z1 = radiusZ * sin(theta1) * sin(phi);
             glNormal3f(x1, y1, z1); // Normal for lighting
             glVertex3f(x1, y1, z1);
 
             // Vertex 2
-            float x2 = radius * sin(theta2) * cos(phi);
-            float y2 = radius * sin(theta2) * sin(phi);
+            float x2 = radiusX * sin(theta2) * cos(phi);
+            float z2 = radiusZ * sin(theta2) * sin(phi);
             glNormal3f(x2, y2, z2); // Normal for lighting
             glVertex3f(x2, y2, z2);
         }
         glEnd();
     }
 
-    // Draw a flat cap at the cutoff level
+    // Draw the bottom cap
     glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(0, 0, -1); // Normal pointing downward
-    glVertex3f(0.0f, 0.0f, cutoffZ); // Center of the cap
+    // Center of the disc
+    glNormal3f(0.0f, -1.0f, 0.0f); // Normal pointing downward
+    glVertex3f(0.0f, cutoffY, 0.0f);
     for (int j = 0; j <= slices; ++j) {
         float phi = j * 2 * M_PI / slices;
-        float x = radius * sin(cutoff * M_PI) * cos(phi);
-        float y = radius * sin(cutoff * M_PI) * sin(phi);
-        glVertex3f(x, y, cutoffZ);
+        float x = 1.45*radiusX * sin(M_PI - cutoff) * cos(phi);
+        float z = 1.45*radiusZ * sin(M_PI - cutoff) * sin(phi);
+        glNormal3f(x, cutoffY, z); // Normal for the edge
+        glVertex3f(x, cutoffY, z);
     }
     glEnd();
 }
 
 void setupLighting() {
-    GLfloat light_ambient[] = {0.2, 0.2, 0.2, 1.0};
-    GLfloat light_diffuse[] = {0.5, 0.5, 0.5, 1.0};
+    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
+    GLfloat light_diffuse[] = {0.7, 0.7, 0.7, 1.0};
     GLfloat light_specular[] = {1.0, 1.0, 1.0, 1.0};
     GLfloat light_position[] = {10.0, 10.0, 10.0, 1.0};
 
@@ -366,9 +371,9 @@ void setupLighting() {
 }
 
 void setupMaterial() {
-    GLfloat mat_ambient[] = {0.1, 0.1, 0.1, 0.2};
-    GLfloat mat_diffuse[] = {0.4, 0.4, 0.4, 0.2};
-    GLfloat mat_specular[] = {0.7, 0.7, 0.7, 0.2};
+    GLfloat mat_ambient[] = {0.4, 0.4, 0.4, 0.2};
+    GLfloat mat_diffuse[] = {0.7, 0.7, 0.7, 0.2};
+    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 0.2};
     GLfloat mat_shininess[] = {50.0};
 
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
@@ -381,16 +386,18 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     setupLighting();
-    //setupMaterial();
+    setupMaterial();
     // Adjust the camera
-    glTranslatef(0.0f, 0.0f, -cameraZ); // Zoom
-    glRotatef(angleX, 1.0f, 0.0f, 0.0f); // Rotate around X-axis
-    glRotatef(angleY, 0.0f, 1.0f, 0.0f); // Rotate around Y-axis
-    glRotatef(angleZ, 0.0f, 0.0f, 1.0f);
+    gluLookAt(zoom*sin(angleH), 4.0, zoom*cos(angleH),
+              0.0, 0.0, 0.0,
+              0.0, 1.0, 0.0);
+    glRotatef(-90, 1.0f, 0.0f, 0.0f);
+    glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
     {
-        glScalef(0.8f*zoom, zoom, 0.55f*zoom);
-        drawSphereWithFlatBottom(1.2f, 20, 50, 0.7f);
+        glRotatef(90, 1.0f, 0.0f, 0.0f);
+        glRotatef(90, 0.0f, 1.0f, 0.0f);
+        drawSphereWithFlatBottom(1.1f, 0.6f, 0.9f, 36, 36, 0.67f);
     }glPopMatrix(); // Sphere with flat bottom starting at 80% height
     glPushMatrix();
     {
@@ -452,8 +459,6 @@ void handleKeyboard(unsigned char key, int x, int y) {
     case 'd': cameraX += 0.1f; break; // Move right
     case '+': zoom += 0.1f; break;    // Zoom in
     case '-': zoom -= 0.1f; break;
-    case 'z': angleZ += 5.0f; break;
-    case 'x': angleZ -= 5.0f; break;   // Zoom out
     }
     glutPostRedisplay();
 }
@@ -461,10 +466,18 @@ void handleKeyboard(unsigned char key, int x, int y) {
 // Keyboard input for special keys (arrow keys)
 void handleSpecialKeys(int key, int x, int y) {
     switch (key) {
-    case GLUT_KEY_UP:    angleX -= 5.0f; break; // Rotate up
-    case GLUT_KEY_DOWN:  angleX += 5.0f; break; // Rotate down
-    case GLUT_KEY_LEFT:  angleY -= 5.0f; break; // Rotate left
-    case GLUT_KEY_RIGHT: angleY += 5.0f; break; // Rotate right
+    case GLUT_KEY_UP:
+        if (angleV >= -75) {angleV -= 3;}
+        break; // Rotate up
+    case GLUT_KEY_DOWN:
+        if (angleV <= 75) {angleV += 3;}
+        break; // Rotate down
+    case GLUT_KEY_LEFT:
+        angleH -= 0.1f;
+        break;
+    case GLUT_KEY_RIGHT:
+        angleH += 0.1f;
+        break;
     }
     glutPostRedisplay();
 }
