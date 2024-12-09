@@ -33,7 +33,6 @@ void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY,
         }
         glEnd();
     }
-
 }
 
 void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, float rad, int segments) {
@@ -48,6 +47,65 @@ void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, 
     glEnd();
 }
 
+void draw3DQuarterOval(float radiusX, float radiusY, float height, int segments) {
+    float halfHeight = height / 2.0f;
+
+    // Top face (1/4 oval)
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(0.0f, 1.0f, 0.0f); // Normal for lighting
+    glVertex3f(0.0f, halfHeight, 0.0f); // Center of the top face
+    for (int i = 0; i <= segments / 4; ++i) { // 1/4 of the circle
+        float angle = (M_PI / 2) * i / (segments / 4); // Quarter circle
+        float x = radiusX * cos(angle);
+        float z = radiusY * sin(angle);
+        glVertex3f(x, halfHeight, z);
+    }
+    glEnd();
+
+    // Bottom face (1/4 oval)
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(0.0f, -1.0f, 0.0f); // Normal for lighting
+    glVertex3f(0.0f, -halfHeight, 0.0f); // Center of the bottom face
+    for (int i = 0; i <= segments / 4; ++i) { // 1/4 of the circle
+        float angle = (M_PI / 2) * i / (segments / 4); // Quarter circle
+        float x = radiusX * cos(angle);
+        float z = radiusY * sin(angle);
+        glVertex3f(x, -halfHeight, z);
+    }
+    glEnd();
+
+    // Curved side faces (connect top and bottom 1/4 ovals)
+    glBegin(GL_TRIANGLE_STRIP);
+    for (int i = 0; i <= segments / 4; ++i) { // 1/4 of the circle
+        float angle = (M_PI / 2) * i / (segments / 4); // Quarter circle
+        float x = radiusX * cos(angle);
+        float z = radiusY * sin(angle);
+
+        glNormal3f(x, 0.0f, z); // Normal for curved side
+        glVertex3f(x, halfHeight, z);    // Top edge
+        glVertex3f(x, -halfHeight, z);   // Bottom edge
+    }
+    glEnd();
+
+    // Front face (vertical rectangle connecting top and bottom planes)
+    glBegin(GL_QUADS);
+    glNormal3f(1.0f, 0.0f, 0.0f); // Normal pointing outward
+    glVertex3f(radiusX, halfHeight, 0.0f); // Top-right corner
+    glVertex3f(radiusX, -halfHeight, 0.0f); // Bottom-right corner
+    glVertex3f(0.0f, -halfHeight, 0.0f); // Bottom-left corner
+    glVertex3f(0.0f, halfHeight, 0.0f); // Top-left corner
+    glEnd();
+
+    // Back face (connect start of curve to top and bottom planes)
+    glBegin(GL_QUADS);
+    glNormal3f(0.0f, 0.0f, -1.0f); // Normal pointing backward
+    glVertex3f(0.0f, halfHeight, 0.0f); // Top-left corner
+    glVertex3f(0.0f, -halfHeight, 0.0f); // Bottom-left corner
+    glVertex3f(0.0f, -halfHeight, radiusY); // Bottom-right corner (end of back face)
+    glVertex3f(0.0f, halfHeight, radiusY); // Top-right corner (end of back face)
+    glEnd();
+}
+
 void drawWings() {
     glutSolidTorus(0.08f, 0.5f, 30, 30);
     GLUquadric* quad = gluNewQuadric();
@@ -59,7 +117,7 @@ void drawWings() {
         gluDisk(quad, 0.0, 0.5f, 30, 30);
         glTranslatef(0.0f, 0.0f, -0.165f);
         drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50);
-         glTranslatef(0.0f, 0.0f, -0.005f);
+        glTranslatef(0.0f, 0.0f, -0.005f);
         gluDisk(quad, 0.0, 0.5f, 30, 30);
     }glPopMatrix();
     glPushMatrix();
@@ -74,26 +132,55 @@ void drawWings() {
         gluCylinder(quad, 0.08f, 0.08f, 2.1f, 30, 30);
         glPushMatrix();
         {
+            glRotatef(-90, 0.0, 1.0, 0.0);
+            glRotatef(90, 1.0, 0.0, 0.0);
+            glTranslatef(2.1, 0.0, -0.11);
+            draw3DQuarterOval(0.5f, 0.18f, 0.2f, 50);
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
             glTranslatef(0.0f, -0.21f, 1.5f);
             glPushMatrix();
             {
                 gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
                 glTranslatef(0.0f, 0.0f, 0.5f);
-                glutSolidSphere(0.13f, 30, 30);
+                glPushMatrix();
+                {
+                    glRotatef(-90, 0.0, 1.0, 0.0);
+                    glRotatef(90, 1.0, 0.0, 0.0);
+                    glTranslatef(-0.02, 0.0, -0.1);
+                    draw3DQuarterOval(0.5f, 0.18f, 0.21f, 50);
+                }
+                glPopMatrix();
             }glPopMatrix();
             glTranslatef(0.0f, -0.23f, -0.1f);
             glPushMatrix();
             {
                 gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
                 glTranslatef(0.0f, 0.0f, 0.5f);
-                glutSolidSphere(0.13f, 30, 30);
+                glPushMatrix();
+                {
+                    glRotatef(-90, 0.0, 1.0, 0.0);
+                    glRotatef(90, 1.0, 0.0, 0.0);
+                    glTranslatef(-0.02, 0.0, -0.1);
+                    draw3DQuarterOval(0.5f, 0.18f, 0.21f, 50);
+                }
+                glPopMatrix();
             }glPopMatrix();
             glTranslatef(0.0f, -0.23f, -0.2f);
             glPushMatrix();
             {
                 gluCylinder(quad, 0.08f, 0.13f, 0.5f, 30, 30);
                 glTranslatef(0.0f, 0.0f, 0.5f);
-                glutSolidSphere(0.13f, 30, 30);
+                glPushMatrix();
+                {
+                    glRotatef(-90, 0.0, 1.0, 0.0);
+                    glRotatef(90, 1.0, 0.0, 0.0);
+                    glTranslatef(-0.02, 0.0, -0.1);
+                    draw3DQuarterOval(0.5f, 0.18f, 0.21f, 50);
+                }
+                glPopMatrix();
             }glPopMatrix();
             glTranslatef(0.0f, -0.18f, -0.4f);
             glPushMatrix();
@@ -101,7 +188,14 @@ void drawWings() {
                 glRotatef(5, 0.4f, 0.0f, 0.0f);
                 gluCylinder(quad, 0.08f, 0.13f, 0.6f, 30, 30);
                 glTranslatef(0.0f, 0.0f, 0.6f);
-                glutSolidSphere(0.13f, 30, 30);
+                glPushMatrix();
+                {
+                    glRotatef(-90, 0.0, 1.0, 0.0);
+                    glRotatef(90, 1.0, 0.0, 0.0);
+                    glTranslatef(-0.02, 0.0, -0.1);
+                    draw3DQuarterOval(0.5f, 0.18f, 0.21f, 50);
+                }
+                glPopMatrix();
             }glPopMatrix();
             glTranslatef(0.0f, -0.15f, -0.8f);
             glPushMatrix();
@@ -109,7 +203,14 @@ void drawWings() {
                 glRotatef(5, 0.4f, 0.0f, 0.0f);
                 gluCylinder(quad, 0.08f, 0.13f, 1.0f, 30, 30);
                 glTranslatef(0.0f, 0.0f, 1.0f);
-                glutSolidSphere(0.13f, 30, 30);
+                glPushMatrix();
+                {
+                    glRotatef(-90, 0.0, 1.0, 0.0);
+                    glRotatef(90, 1.0, 0.0, 0.0);
+                    glTranslatef(-0.02, 0.0, -0.1);
+                    draw3DQuarterOval(0.5f, 0.18f, 0.21f, 50);
+                }
+                glPopMatrix();
             }glPopMatrix();
         }glPopMatrix();
     }glPopMatrix();
