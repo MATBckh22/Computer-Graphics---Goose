@@ -563,7 +563,7 @@ void openWings(int value)
 {
     if (moving == true)
     {
-        if(value == 1 && wingAngle < 80)
+        if(value == 1 && wingAngle < 75)
         {
             wingAngle += 5;
             glutPostRedisplay();
