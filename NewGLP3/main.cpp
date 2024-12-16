@@ -2,10 +2,12 @@
 #include <GL/glut.h>
 #include <cmath>
 
-float cameraX = 0.0f, cameraY = 0.0f, cameraZ = 5.0f; // Camera position
 float angleH  = 0.0f;
-int angleV = 0;               // Rotation angles
+float height = 0.0f;               // Rotation angles
 float zoom = 7.0f;                                    // Zoom level
+int open = 0;
+bool moving = false;
+int wingAngle = 0;                                   // Zoom level
 
 void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY, int sides, int rings, float startAngle, float sweepAngle) {
     float ringDelta = 2.0f * M_PI / rings;       // Angle between each ring
@@ -489,56 +491,53 @@ void display() {
     setupLighting();
     setupMaterial();
     // Adjust the camera
-    gluLookAt(zoom*sin(angleH), 4.0, zoom*cos(angleH),
-              0.0, 0.0, 0.0,
+    gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
+              0.0, 1.0, 0.0,
               0.0, 1.0, 0.0);
     glRotatef(-90, 1.0f, 0.0f, 0.0f);
-    glRotatef(angleV, 0.0f, 1.0f, 0.0f);
+    //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
         glRotatef(90, 0.0f, 1.0f, 0.0f);
         drawSphereWithFlatBottom(1.1f, 0.6f, 0.9f, 36, 36, 0.67f);
     }glPopMatrix(); // Sphere with flat bottom starting at 80% height
+
     glPushMatrix();
     {
-        glTranslatef(1.05f, 0.3f, 0.5f);
-        glPushMatrix();
-        {
-            glRotatef(90, 1.0f, 0.0f, 0.0f);
+        glTranslatef(0.9f, 0.3f, 0.3f);
+        glRotatef(90, 1.0f, 0.0f, 0.0f);
+        glRotatef(-wingAngle, 0.0f, 0.0f, 1.0f);
+        drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 5*M_PI/6);
+        glPushMatrix();{
+            glTranslatef(0.0f, 0.5f, 0.0f);
             glRotatef(-90, 0.0f, 1.0f, 0.0f);
-            glRotatef(70, 0.0f, 0.0f, 1.0f);
+            glRotatef(75, 0.0f, 0.0f, 1.0f);
             drawWings();
         }glPopMatrix();
-        glPushMatrix();
-        {
-            glTranslatef(0.0f, 0.0f, -0.4f);
-            glRotatef(90, 1.0f, 0.0f , 0.0f);
-            drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 2*M_PI/3);
-        }
-        glPopMatrix();
     }glPopMatrix();
     glPushMatrix();
     {
-        glTranslatef(-1.05f, 0.3f, 0.5f);
+        glRotatef(180, 0.0f, 0.0f, 1.0f);
         glPushMatrix();
         {
+            glTranslatef(0.9f, -0.3f, 0.3f);
             glRotatef(90, 1.0f, 0.0f, 0.0f);
-            glRotatef(-90, 0.0f, 1.0f, 0.0f);
-            glRotatef(70, 0.0f, 0.0f, 1.0f);
-            drawWings();
+            glRotatef(-wingAngle, 0.0f, 0.0f, 1.0f);
+            drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 5*M_PI/6);
+            glPushMatrix();{
+                glRotatef(180, 0.0f, 1.0f, 0.0f);
+                glTranslatef(0.0f, 0.5f, 0.0f);
+                glRotatef(-90, 0.0f, 1.0f, 0.0f);
+                glRotatef(75, 0.0f, 0.0f, 1.0f);
+                drawWings();
+            }glPopMatrix();
         }glPopMatrix();
-        glPushMatrix();
-        {
-            glTranslatef(0.0f, 0.0f, -0.4f);
-            glRotatef(90, 1.0f, 0.0f , 0.0f);
-            drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -M_PI/6, 2*M_PI/3);
-        }
-        glPopMatrix();
     }glPopMatrix();
 
     glPushMatrix();
     {
+        glTranslatef(0.0f, 0.3f, -0.05f);
         drawNeckWithStackedSpheres();
     }
     glPopMatrix();
@@ -554,24 +553,51 @@ void display() {
 
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'w': cameraY += 0.1f; break; // Move up
-    case 's': cameraY -= 0.1f; break; // Move down
-    case 'a': cameraX -= 0.1f; break; // Move left
-    case 'd': cameraX += 0.1f; break; // Move right
     case '+': zoom += 0.1f; break;    // Zoom in
     case '-': zoom -= 0.1f; break;
     }
     glutPostRedisplay();
 }
 
+void openWings(int value)
+{
+    if (moving == true)
+    {
+        if(value == 1 && wingAngle < 80)
+        {
+            wingAngle += 5;
+            glutPostRedisplay();
+            glutTimerFunc(24, openWings, value);
+        }
+        else if(value == 0 && wingAngle > 0)
+        {
+            wingAngle -= 5;
+            glutPostRedisplay();
+            glutTimerFunc(24, openWings, value);
+        }
+        else { moving = false; }
+    }
+}
+
+void handleMouse(int button, int state, int x, int y)
+{
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        if(open == 0) {open = 1;}
+        else {open = 0;}
+        moving = true;
+        glutTimerFunc(24, openWings, open);
+    }
+}
+
 // Keyboard input for special keys (arrow keys)
 void handleSpecialKeys(int key, int x, int y) {
     switch (key) {
-    case GLUT_KEY_UP:
-        if (angleV >= -75) {angleV -= 3;}
-        break; // Rotate up
     case GLUT_KEY_DOWN:
-        if (angleV <= 75) {angleV += 3;}
+        if (height >= -5.0f) {height -= 0.2f;}
+        break; // Rotate up
+    case GLUT_KEY_UP:
+        if (height <= 5.0f) {height += 0.2f;}
         break; // Rotate down
     case GLUT_KEY_LEFT:
         angleH -= 0.1f;
@@ -603,7 +629,7 @@ int main(int argc, char** argv) {
     glShadeModel(GL_SMOOTH);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
-
+    glutMouseFunc(handleMouse);
 
     glutMainLoop();
     return 0;
