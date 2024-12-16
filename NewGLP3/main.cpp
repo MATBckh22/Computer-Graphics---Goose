@@ -2,12 +2,162 @@
 #include <GL/glut.h>
 #include <cmath>
 
-float angleH  = 0.0f;
-float height = 0.0f;               // Rotation angles
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+int defaultWing(int openValue);
+float angleH  = M_PI/2;
+float height = 2.0f;
+float height1 = 2.0f;
+float height2 = 2.0f;               // Rotation angles
 float zoom = 7.0f;                                    // Zoom level
-int open = 0;
-bool moving = false;
-int wingAngle = 0;                                   // Zoom level
+int open = 1;
+bool moving = true;
+bool moving2 = true;
+int maxAngle = 83;
+int wingAngle = defaultWing(open);
+float placed = 0.53f;
+
+int defaultWing(int openValue) {
+    if (openValue == 0) {return 0;}
+    else return maxAngle;
+}
+
+GLuint texture, texture2;
+GLuint loadTexture(const char* filename) {
+    int width, height, channels;
+    unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
+    if (!data) {
+        printf("Failed to load image: %s\n", filename);
+        return 0;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                 channels == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);  // Free image data after creating texture
+    return textureID;
+}
+
+void drawTablet() {
+    glPushMatrix();
+    {
+        glBegin(GL_QUADS);
+        {
+            glColor3f(0.1f, 0.1f, 0.1f);
+            glVertex3f(-0.6f, 0.4f, 0.01f);
+            glVertex3f(-0.6f, -0.4f, 0.01f);
+            glVertex3f(0.6f, -0.4f, 0.01f);
+            glVertex3f(0.6f, 0.4f, 0.01f);
+
+            glColor3f(0.9f, 0.9f, 0.9f);
+            glVertex3f(-0.6f, 0.4f, -0.01f);
+            glVertex3f(-0.6f, -0.4f, -0.01f);
+            glVertex3f(-0.6f, -0.4f, 0.01f);
+            glVertex3f(-0.6f, 0.4f, 0.01f);
+
+            glVertex3f(0.6f, 0.4f, -0.01f);
+            glVertex3f(0.6f, -0.4f, -0.01f);
+            glVertex3f(0.6f, -0.4f, 0.01f);
+            glVertex3f(0.6f, 0.4f, 0.01f);
+
+            glVertex3f(0.6f, 0.4f, -0.01f);
+            glVertex3f(-0.6f, 0.4f, -0.01f);
+            glVertex3f(-0.6f, 0.4f, 0.01f);
+            glVertex3f(0.6f, 0.4f, 0.01f);
+
+            glVertex3f(0.6f, -0.4f, -0.01f);
+            glVertex3f(-0.6f, -0.4f, -0.01f);
+            glVertex3f(-0.6f, -0.4f, 0.01f);
+            glVertex3f(0.6f, -0.4f, 0.01f);
+
+            glColor3f(0.9f, 0.95f, 1.0f);
+            glVertex3f(-0.6f, 0.4f, -0.01f);
+            glColor3f(0.7f, 0.8f, 1.0f);
+            glVertex3f(-0.6f, -0.4f, -0.01f);
+            glColor3f(0.9f, 0.95f, 1.0f);
+            glVertex3f(0.6f, -0.4f, -0.01f);
+            glColor3f(0.7f, 0.8f, 1.0f);
+            glVertex3f(0.6f, 0.4f, -0.01f);
+        }
+        glEnd();
+        glEnable(GL_TEXTURE_2D);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glBegin(GL_QUADS);
+        {
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.55f, -0.35f, 0.011f);
+            glTexCoord2f(1.0f, 0.0f); glVertex3f(0.55f, -0.35f, 0.011f);
+            glTexCoord2f(1.0f, 1.0f); glVertex3f(0.55f, 0.35f, 0.011f);
+            glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.55f, 0.35f, 0.011f);
+        }glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+    glPopMatrix();
+}
+
+void drawPhone() {
+    glPushMatrix();
+    {
+        glBegin(GL_QUADS);
+        {
+            glColor3f(0.1f, 0.1f, 0.1f);
+            glVertex3f(-0.2f, 0.4f, 0.01f);
+            glVertex3f(-0.2f, -0.4f, 0.01f);
+            glVertex3f(0.2f, -0.4f, 0.01f);
+            glVertex3f(0.2f, 0.4f, 0.01f);
+
+            glColor3f(0.9f, 0.9f, 0.9f);
+            glVertex3f(-0.2f, 0.4f, -0.01f);
+            glVertex3f(-0.2f, -0.4f, -0.01f);
+            glVertex3f(-0.2f, -0.4f, 0.01f);
+            glVertex3f(-0.2f, 0.4f, 0.01f);
+
+            glVertex3f(0.2f, 0.4f, -0.01f);
+            glVertex3f(0.2f, -0.4f, -0.01f);
+            glVertex3f(0.2f, -0.4f, 0.01f);
+            glVertex3f(0.2f, 0.4f, 0.01f);
+
+            glVertex3f(0.2f, 0.4f, -0.01f);
+            glVertex3f(-0.2f, 0.4f, -0.01f);
+            glVertex3f(-0.2f, 0.4f, 0.01f);
+            glVertex3f(0.2f, 0.4f, 0.01f);
+
+            glVertex3f(0.2f, -0.4f, -0.01f);
+            glVertex3f(-0.2f, -0.4f, -0.01f);
+            glVertex3f(-0.2f, -0.4f, 0.01f);
+            glVertex3f(0.2f, -0.4f, 0.01f);
+
+            glColor3f(1.0f, 0.95f, 0.95f);
+            glVertex3f(-0.2f, 0.4f, -0.01f);
+            glColor3f(1.0f, 0.8f, 0.7f);
+            glVertex3f(-0.2f, -0.4f, -0.01f);
+            glColor3f(1.0f, 0.95f, 0.95f);
+            glVertex3f(0.2f, -0.4f, -0.01f);
+            glColor3f(1.0f, 0.8f, 0.7f);
+            glVertex3f(0.2f, 0.4f, -0.01f);
+        }
+        glEnd();
+        glEnable(GL_TEXTURE_2D);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBegin(GL_QUADS);
+        {
+            glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.18f, -0.38f, 0.011f);
+            glTexCoord2f(1.0f, 0.0f); glVertex3f(0.18f, -0.38f, 0.011f);
+            glTexCoord2f(1.0f, 1.0f); glVertex3f(0.18f, 0.38f, 0.011f);
+            glTexCoord2f(0.0f, 1.0f); glVertex3f(-0.18f, 0.38f, 0.011f);
+        }glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+    glPopMatrix();
+}
 
 void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY, int sides, int rings, float startAngle, float sweepAngle) {
     float ringDelta = 2.0f * M_PI / rings;       // Angle between each ring
@@ -495,7 +645,6 @@ void display() {
               0.0, 1.0, 0.0,
               0.0, 1.0, 0.0);
     glRotatef(-90, 1.0f, 0.0f, 0.0f);
-    //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
@@ -547,14 +696,44 @@ void display() {
         drawTailWithTaperedTriangles();
     }
     glPopMatrix();
-
+    glDisable(GL_LIGHTING);
+    glPushMatrix();
+    {
+        glRotatef(90, 1.0f, 0.0f, 0.0f);
+        glTranslatef(0.0f, 0.0f, -1.15f);
+        glScalef(3.3f, 3.3f, 3.3f);
+        glPushMatrix();
+        {
+            glTranslatef(0.0f, height1, 0.0f); //lowest: 0.53f
+            glRotatef(-25, 1.0f, 0.0f, 0.0f);
+            drawTablet();
+        }glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(0.0f, height2, 0.0f);
+            glRotatef(-25, 1.0f, 0.0f, 0.0f);
+            drawPhone();
+        }glPopMatrix();
+    }
+    glPopMatrix();
     glutSwapBuffers();
 }
 
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case '+': zoom += 0.1f; break;    // Zoom in
-    case '-': zoom -= 0.1f; break;
+    case 'Z':
+    case 'z':
+        if (zoom < 10.0f) zoom += 0.1f;
+        break;
+    case 'X':
+    case 'x':
+        if (zoom > 4.0f) zoom -= 0.1f;
+        break;
+    case 27:
+        exit(0);
+        break;
+    default:
+        break;
     }
     glutPostRedisplay();
 }
@@ -563,17 +742,29 @@ void openWings(int value)
 {
     if (moving == true)
     {
-        if(value == 1 && wingAngle < 75)
+        if(value == 1 && wingAngle < maxAngle)
         {
-            wingAngle += 5;
+            wingAngle += 1;
             glutPostRedisplay();
-            glutTimerFunc(24, openWings, value);
+            glutTimerFunc(6, openWings, value);
+        }
+        else if(value == 1 && wingAngle >= maxAngle && height1 > placed)
+        {
+            height1 -= 0.01f;
+            glutPostRedisplay();
+            glutTimerFunc(6, openWings, value);
         }
         else if(value == 0 && wingAngle > 0)
         {
-            wingAngle -= 5;
+            wingAngle -= 1;
             glutPostRedisplay();
-            glutTimerFunc(24, openWings, value);
+            glutTimerFunc(6, openWings, value);
+        }
+        else if(value == 0 && wingAngle <= 0 && height2 > placed)
+        {
+            height2 -= 0.01f;
+            glutPostRedisplay();
+            glutTimerFunc(6, openWings, value);
         }
         else { moving = false; }
     }
@@ -583,10 +774,11 @@ void handleMouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
+        height1 = height2 = 2.0f;
         if(open == 0) {open = 1;}
         else {open = 0;}
         moving = true;
-        glutTimerFunc(24, openWings, open);
+        glutTimerFunc(6, openWings, open);
     }
 }
 
@@ -594,10 +786,10 @@ void handleMouse(int button, int state, int x, int y)
 void handleSpecialKeys(int key, int x, int y) {
     switch (key) {
     case GLUT_KEY_DOWN:
-        if (height >= -5.0f) {height -= 0.2f;}
+        if (height >= -6.0f) {height -= 0.2f;}
         break; // Rotate up
     case GLUT_KEY_UP:
-        if (height <= 5.0f) {height += 0.2f;}
+        if (height <= 6.0f) {height += 0.2f;}
         break; // Rotate down
     case GLUT_KEY_LEFT:
         angleH -= 0.1f;
@@ -617,6 +809,17 @@ void reshape(int width, int height) {
     glMatrixMode(GL_MODELVIEW);
 }
 
+void init() {
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    stbi_set_flip_vertically_on_load(true);
+    /*
+    Remember to change the document name path into your version...
+    */
+    texture = loadTexture("C:\\Users\\kenho\\Documents\\Programming Practice\\TestGL\\UI.jpg");
+    texture2 = loadTexture("C:\\Users\\kenho\\Documents\\Programming Practice\\TestGL\\PhoneUI.jpg");
+}
+
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -624,13 +827,13 @@ int main(int argc, char** argv) {
     glutCreateWindow("OpenGL Sphere with Depth");
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-
+    init();
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
     glutMouseFunc(handleMouse);
-
+    glutTimerFunc(6, openWings, open);
     glutMainLoop();
     return 0;
 }
