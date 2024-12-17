@@ -1,0 +1,34 @@
+void drawSphereWithTexture(float radius, int slices, int stacks, int textureDivisions) {
+    for (int i = 0; i < stacks; ++i) {
+        float theta1 = M_PI * i / stacks;
+        float theta2 = M_PI * (i + 1) / stacks;
+
+        glBegin(GL_QUAD_STRIP);
+        for (int j = 0; j <= slices; ++j) {
+            float phi = 2.0f * M_PI * j / slices;
+
+            float segmentU = (float)j / slices * textureDivisions;
+            float segmentV1 = (float)i / stacks * textureDivisions;
+            float segmentV2 = (float)(i + 1) / stacks * textureDivisions;
+
+            float s1 = fmod(segmentU, 1.0f);
+            float t1 = fmod(segmentV1, 1.0f);
+            float t2 = fmod(segmentV2, 1.0f);
+
+            float x1 = radius * sin(theta1) * cos(phi);
+            float y1 = radius * cos(theta1);
+            float z1 = radius * sin(theta1) * sin(phi);
+
+            glTexCoord2f(s1, t1);
+            glVertex3f(x1, y1, z1);
+
+            float x2 = radius * sin(theta2) * cos(phi);
+            float y2 = radius * cos(theta2);
+            float z2 = radius * sin(theta2) * sin(phi);
+
+            glTexCoord2f(s1, t2);
+            glVertex3f(x2, y2, z2);
+        }
+        glEnd();
+    }
+}
