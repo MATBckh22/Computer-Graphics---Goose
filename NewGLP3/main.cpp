@@ -1,27 +1,30 @@
 #include <windows.h>
 #include <GL/glut.h>
 #include <cmath>
-
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "D:/Downloads/stb_image.h"
 
-int defaultWing(int openValue);
-float angleH  = M_PI/2;
-float height = 2.0f;
+float angleH  = 0.0f;
+float height = 0.0f;               // Rotation angles
 float height1 = 2.0f;
-float height2 = 2.0f;               // Rotation angles
+float height2 = 2.0f;
 float zoom = 7.0f;                                    // Zoom level
 int open = 1;
 bool moving = true;
 bool moving2 = true;
 int maxAngle = 83;
-int wingAngle = defaultWing(open);
 float placed = 0.53f;
 
-int defaultWing(int openValue) {
-    if (openValue == 0) {return 0;}
-    else return maxAngle;
-}
+// Brightness control variables
+float lightBrightness = 0.3f; // Initial brightness (dim)
+const float MAX_BRIGHTNESS = 1.0f;
+const float MIN_BRIGHTNESS = 0.0f;
+
+bool isFadingIn = false;   // Indicates if the light is fading in
+bool isFadingOut = false;  // Indicates if the light is fading out
+
+// Light state variable
+bool lightOn = true; // Light is initially on
 
 GLuint texture, texture2;
 GLuint loadTexture(const char* filename) {
@@ -44,6 +47,23 @@ GLuint loadTexture(const char* filename) {
     stbi_image_free(data);  // Free image data after creating texture
     return textureID;
 }
+
+void init() {
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    stbi_set_flip_vertically_on_load(true);
+    /*
+    Remember to change the document name path into your version...
+    */
+    texture = loadTexture("D:/Downloads/UI.jpg");
+    texture2 = loadTexture("D:/Downloads/PhoneUI.jpg");
+}
+
+int defaultWing(int openValue) {
+    if (openValue == 0) {return 0;}
+    else return maxAngle;
+}
+
+int wingAngle = defaultWing(open);
 
 void drawTablet() {
     glPushMatrix();
@@ -90,6 +110,7 @@ void drawTablet() {
         glEnable(GL_TEXTURE_2D);
         glColor3f(1.0f, 1.0f, 1.0f);
         glBindTexture(GL_TEXTURE_2D, texture);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         glBegin(GL_QUADS);
         {
             glTexCoord2f(0.0f, 0.0f); glVertex3f(-0.55f, -0.35f, 0.011f);
@@ -174,26 +195,68 @@ void drawPartialTorus(float innerRadius, float outerRadiusX, float outerRadiusY,
             float y0 = (outerRadiusY + innerRadius * cos(sideAngle)) * sin(ringAngle);
             float z0 = innerRadius * sin(sideAngle);
 
+            // compute normals (lighting)
+            float nx = cos(sideAngle) * cos(ringAngle);
+            float ny = cos(sideAngle) * sin(ringAngle);
+            float nz = sin(sideAngle);
+
+            // normalize the normal vector for proper lighting
+            float length = sqrt(nx * nx + ny * ny + nz * nz);
+            if (length != 0.0f) {
+                nx /= length;
+                ny /= length;
+                nz /= length;
+            }
+
             // Compute vertices for the next ring
             float x1 = (outerRadiusX + innerRadius * cos(sideAngle)) * cos(ringAngle + ringDelta);
             float y1 = (outerRadiusY + innerRadius * cos(sideAngle)) * sin(ringAngle + ringDelta);
             float z1 = innerRadius * sin(sideAngle);
+            float nextRingAngle = ringAngle + ringDelta;
 
-            // Define two points of the quad strip
+            // compute normals for the next ring
+            float nxNext = cos(sideAngle) * cos(nextRingAngle);
+            float nyNext = cos(sideAngle) * sin(nextRingAngle);
+            float nzNext = sin(sideAngle);
+
+            // normalize the normal vector
+            float lengthNext = sqrt(nxNext * nxNext + nyNext * nyNext + nzNext * nzNext);
+            if (lengthNext != 0.0f) {
+                nxNext /= lengthNext;
+                nyNext /= lengthNext;
+                nzNext /= lengthNext;
+            }
+
+            // normalize and define two points of the quad strip
+            glNormal3f(nx, ny, nz);
             glVertex3f(x0, y0, z0);
+
+            glNormal3f(nxNext, nyNext, nzNext);
             glVertex3f(x1, y1, z1);
         }
         glEnd();
     }
 }
 
-void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, float rad, int segments) {
+void drawSector(float cX, float cY, float cZ, float rX, float rY, float Cbegin, float rad, int segments, bool isLeft) {
+
+    GLfloat normalX = 0.0f;
+    GLfloat normalY = 0.0f;
+    GLfloat normalZ;
+    if (isLeft){
+        normalZ = 1.0f;
+    }
+    else{
+        normalZ = -1.0f;
+    }
+
     glBegin(GL_TRIANGLE_FAN);
     glVertex3f(cX, cY, cZ);
     for (int i = 0; i <= segments; ++i) {
         float angle = Cbegin + (rad * i / segments);
         float x = cX + rX * cos(angle);
         float y = cY + rY * sin(angle);
+        glNormal3f(normalX, normalY, normalZ); // normal for each edge vertex
         glVertex3f(x, y, cZ);
     }
     glEnd();
@@ -204,7 +267,7 @@ void draw3DQuarterOval(float radiusX, float radiusY, float height, int segments)
 
     // Top face (1/4 oval)
     glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(0.0f, 1.0f, 0.0f); // Normal for lighting
+    glNormal3f(-1.0f, 1.0f, 1.0f); // Normal for lighting
     glVertex3f(0.0f, halfHeight, 0.0f); // Center of the top face
     for (int i = 0; i <= segments / 4; ++i) { // 1/4 of the circle
         float angle = (M_PI / 2) * i / (segments / 4); // Quarter circle
@@ -216,7 +279,7 @@ void draw3DQuarterOval(float radiusX, float radiusY, float height, int segments)
 
     // Bottom face (1/4 oval)
     glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(0.0f, -1.0f, 0.0f); // Normal for lighting
+    glNormal3f(-1.0f, -1.0f, 1.0f); // Normal for lighting
     glVertex3f(0.0f, -halfHeight, 0.0f); // Center of the bottom face
     for (int i = 0; i <= segments / 4; ++i) { // 1/4 of the circle
         float angle = (M_PI / 2) * i / (segments / 4); // Quarter circle
@@ -258,18 +321,26 @@ void draw3DQuarterOval(float radiusX, float radiusY, float height, int segments)
     glEnd();
 }
 
-void drawWings() {
+void drawWings(bool isLeft) {
     glutSolidTorus(0.08f, 0.5f, 30, 30);
     GLUquadric* quad = gluNewQuadric();
+
     glPushMatrix();
     {
         glTranslatef(0.0f, 0.0f, 0.08f);
-        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50);
+        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50, isLeft);
         glTranslatef(0.0f, 0.0f, 0.005f);
-        gluDisk(quad, 0.0, 0.5f, 30, 30);
+        // right disk
+        glPushMatrix();
+        {
+            glRotatef(180, 0.0, 1.0, 0.0);
+            gluDisk(quad, 0.0, 0.5f, 30, 30);
+        }
+        glPopMatrix();
         glTranslatef(0.0f, 0.0f, -0.165f);
-        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50);
+        drawSector(0.0f, 0.5f, 0.0f, 1.9f, 1.0f, -M_PI/2, M_PI/2, 50, isLeft);
         glTranslatef(0.0f, 0.0f, -0.005f);
+        // left disk
         gluDisk(quad, 0.0, 0.5f, 30, 30);
     }glPopMatrix();
     glPushMatrix();
@@ -411,7 +482,7 @@ void drawNeckWithStackedSpheres() {
     glPopMatrix();
 }
 
-//tail (lighting bug)
+// tail
 void drawTailWithTaperedTriangles() {
     int numTriangles = 2000;      // Number of stacked triangles to create the tail
     float baseWidth = 0.8f;     // Width of the base of the tail (widest point)
@@ -482,83 +553,6 @@ void drawTailWithTaperedTriangles() {
     glPopMatrix();
 }
 
-//partially fixed lighting but not satisfied
-/*
-void drawTailWithTaperedTriangles() {
-    int numTriangles = 20;      // Number of stacked triangles to create the tail
-    float baseWidth = 0.8f;     // Width of the base of the tail (widest point)
-    float tipWidth = 0.2f;      // Width at the tip of the tail (smallest point)
-    float baseThickness = 0.2f; // Thickness at the base of the tail
-    float tipThickness = 0.05f; // Thickness at the tip of the tail
-    float tailLength = 1.2f;    // Total length of the tail
-
-    glPushMatrix();
-    {
-        // Position the tail at the back of the body
-        glTranslatef(0.0f, -1.0f, -0.8f); // Adjust these values as needed for correct positioning
-        glRotatef(-30.0f, 1.0f, 0.0f, 0.0f); // Rotate the tail slightly upwards
-
-        // Stack triangles with decreasing thickness along the length of the tail
-        for (int i = 0; i < numTriangles; ++i) {
-            float t = (float)i / numTriangles;  // Parametric value [0, 1] for progression
-            float currentWidth = baseWidth + t * (tipWidth - baseWidth);  // Linearly interpolate width
-            float currentHeight = tailLength * (1 - t);  // Linearly decrease height along the length
-            float currentThickness = baseThickness + t * (tipThickness - baseThickness);  // Linearly decrease thickness
-
-            // Draw each thick triangle as a prism
-            glPushMatrix();
-            {
-                glTranslatef(0.0f, currentHeight, 0.0f);  // Move each triangle upwards
-
-                glBegin(GL_QUADS);
-
-                // Front face of the triangle
-                glNormal3f(0.0f, 0.0f, 1.0f); // Normal pointing towards the viewer
-                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);               // Top point (front)
-                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left point (front)
-                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right point (front)
-
-                // Back face of the triangle
-                glNormal3f(0.0f, 0.0f, -1.0f); // Normal pointing away from the viewer
-                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);              // Top point (back)
-                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left point (back)
-                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right point (back)
-
-                glEnd();
-
-                // Draw connecting edges between the front and back faces to create thickness
-                glBegin(GL_QUADS);
-
-                // Left side connecting quad
-                glNormal3f(-1.0f, 0.0f, 0.0f); // Normal pointing left
-                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
-                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
-                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
-                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
-
-                // Right side connecting quad
-                glNormal3f(1.0f, 0.0f, 0.0f); // Normal pointing right
-                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
-                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
-                glVertex3f(0.0f, 0.3f * t, -currentThickness / 2.0f);               // Top (back)
-                glVertex3f(0.0f, 0.3f * t, currentThickness / 2.0f);                // Top (front)
-
-                // Bottom side connecting quad
-                glNormal3f(0.0f, -1.0f, 0.0f); // Normal pointing downward
-                glVertex3f(-currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);    // Bottom-left (front)
-                glVertex3f(-currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);   // Bottom-left (back)
-                glVertex3f(currentWidth / 2.0f, 0.0f, -currentThickness / 2.0f);    // Bottom-right (back)
-                glVertex3f(currentWidth / 2.0f, 0.0f, currentThickness / 2.0f);     // Bottom-right (front)
-
-                glEnd();
-            }
-            glPopMatrix();
-        }
-    }
-    glPopMatrix();
-}
-*/
-
 void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int slices, int stacks, float cutoff) {
     float cutoffY = radiusY * cos(cutoff * M_PI); // Calculate cut-off height in sphere's coordinate
 
@@ -581,13 +575,41 @@ void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int s
             // Vertex 1
             float x1 = radiusX * sin(theta1) * cos(phi);
             float z1 = radiusZ * sin(theta1) * sin(phi);
-            glNormal3f(x1, y1, z1); // Normal for lighting
+
+            // normal for vertex 1
+            float nx1 = x1 / (radiusX * radiusX);
+            float ny1 = y1 / (radiusY * radiusY);
+            float nz1 = z1 / (radiusZ * radiusZ);
+
+            // normalize normal vector
+            float length1 = sqrt(nx1 * nx1 + ny1 * ny1 + nz1 * nz1);
+            if (length1 != 0.0f) {
+                nx1 /= length1;
+                ny1 /= length1;
+                nz1 /= length1;
+            }
+
+            glNormal3f(nx1, ny1, nz1);
             glVertex3f(x1, y1, z1);
 
             // Vertex 2
             float x2 = radiusX * sin(theta2) * cos(phi);
             float z2 = radiusZ * sin(theta2) * sin(phi);
-            glNormal3f(x2, y2, z2); // Normal for lighting
+
+            // normal for vertex 2
+            float nx2 = x2 / (radiusX * radiusX);
+            float ny2 = y2 / (radiusY * radiusY);
+            float nz2 = z2 / (radiusZ * radiusZ);
+
+            // normalize normal vector
+            float length2 = sqrt(nx2 * nx2 + ny2 * ny2 + nz2 * nz2);
+            if (length2 != 0.0f) {
+                nx2 /= length2;
+                ny2 /= length2;
+                nz2 /= length2;
+            }
+
+            glNormal3f(nx2, ny2, nz2); // Set normal for lighting
             glVertex3f(x2, y2, z2);
         }
         glEnd();
@@ -602,49 +624,192 @@ void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int s
         float phi = j * 2 * M_PI / slices;
         float x = 1.45*radiusX * sin(M_PI - cutoff) * cos(phi);
         float z = 1.45*radiusZ * sin(M_PI - cutoff) * sin(phi);
-        glNormal3f(x, cutoffY, z); // Normal for the edge
+        glNormal3f(0.0f, -1.0f, 0.0f); // Normal for the edge
         glVertex3f(x, cutoffY, z);
     }
     glEnd();
 }
 
 void setupLighting() {
-    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
-    GLfloat light_diffuse[] = {0.7, 0.7, 0.7, 1.0};
-    GLfloat light_specular[] = {1.0, 1.0, 1.0, 1.0};
-    GLfloat light_position[] = {10.0, 10.0, 10.0, 1.0};
+    if (lightOn) {
+        // Set a low global ambient light for a softer overall lighting
+        GLfloat global_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Very low ambient
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+        // Set up light properties based on current brightness
+        GLfloat light_ambient[]  = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.15f * lightBrightness, 1.0f}; // Warm ambient
+        GLfloat light_diffuse[]  = {0.6f * lightBrightness, 0.5f * lightBrightness, 0.3f * lightBrightness, 1.0f}; // Warm diffuse
+        GLfloat light_specular[] = {0.8f, 0.7f, 0.5f, 1.0f}; // Soft specular
 
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+        // Position the light at the object's location (assuming object is at origin)
+        // light from below
+        GLfloat light_position[] = {0.0f, 0.0f, -1.0f, 1.0f}; // Adjust Y and Z as needed
+
+        // Attenuation factors for smoother light fall-off
+        GLfloat light_constant_attenuation = 0.5f;
+        GLfloat light_linear_attenuation = 0.05f;
+        GLfloat light_quadratic_attenuation = 0.01f;
+
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
+        // Set attenuation
+        glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, light_constant_attenuation);
+        glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, light_linear_attenuation);
+        glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, light_quadratic_attenuation);
+
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+    } else {
+        // When light is off, set light0's ambient and diffuse to zero
+        GLfloat light_ambient_off[]  = {0.0f, 0.0f, 0.0f, 1.0f};
+        GLfloat light_diffuse_off[]  = {0.0f, 0.0f, 0.0f, 1.0f};
+        GLfloat light_specular_off[] = {0.0f, 0.0f, 0.0f, 1.0f};
+
+        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient_off);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse_off);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular_off);
+
+        // Optionally, adjust global ambient if needed
+        GLfloat global_ambient_off[] = {0.3f, 0.3f, 0.3f, 1.0f}; // Low ambient to render gray
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient_off);
+
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+    }
 }
 
 void setupMaterial() {
-    GLfloat mat_ambient[] = {0.4, 0.4, 0.4, 0.2};
-    GLfloat mat_diffuse[] = {0.7, 0.7, 0.7, 0.2};
-    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 0.2};
-    GLfloat mat_shininess[] = {50.0};
+    if (lightOn) {
+        // Set material properties with emission based on brightness
+        GLfloat mat_ambient[]    = {0.4f, 0.35f, 0.3f, 1.0f}; // Slightly warmer ambient
+        GLfloat mat_diffuse[]    = {0.7f, 0.65f, 0.6f, 1.0f}; // Slightly warmer diffuse
+        GLfloat mat_specular[]   = {0.9f, 0.85f, 0.75f, 1.0f}; // Soft specular
+        GLfloat mat_shininess[]  = {20.0f}; // Reduced shininess for softer highlights
 
-    glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+        // Calculate emission color based on brightness (warm yellow)
+        GLfloat mat_emission[]   = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.1f * lightBrightness, 1.0f};
+
+        glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+        glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+    } else {
+        // Set material to gray with 30% transparency
+        GLfloat mat_ambient[]    = {0.8f, 0.8f, 0.8f, 0.9f}; // Gray ambient with alpha 0.7
+        GLfloat mat_diffuse[]    = {0.8f, 0.8f, 0.8f, 0.9f}; // Gray diffuse with alpha 0.7
+        GLfloat mat_specular[]   = {0.2f, 0.2f, 0.2f, 0.7f}; // Low specular with alpha 0.7
+        GLfloat mat_shininess[]  = {10.0f}; // Low shininess for softer highlights
+
+        // No emission when light is off
+        GLfloat mat_emission[]   = {0.0f, 0.0f, 0.0f, 1.0f};
+
+        glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+        glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+    }
+}
+
+void setupAdditionalLights() {
+    // Secondary light 1: Soft ambient light from above
+    GLfloat light1_ambient[]  = {0.5f * lightBrightness, 0.45f * lightBrightness, 0.35f * lightBrightness, 1.0f}; // Warm ambient
+    GLfloat light1_diffuse[]  = {0.6f * lightBrightness, 0.5f * lightBrightness, 0.3f * lightBrightness, 1.0f}; // Warm diffuse
+    GLfloat light1_specular[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Soft specular
+    GLfloat light1_position[] = {0.0f, 0.0f, 1.0f, 1.0f}; // Above the scene
+
+    glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, light1_specular);
+    glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
+
+    glEnable(GL_LIGHT1);
+
+    // Secondary light 2: Soft ambient light from behind
+    GLfloat light2_ambient[]  = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.15f * lightBrightness, 1.0f}; // Warm ambient
+    GLfloat light2_diffuse[]  = {0.6f * lightBrightness, 0.5f * lightBrightness, 0.3f * lightBrightness, 1.0f}; // Warm diffuse
+    GLfloat light2_specular[] = {0.0f, 0.0f, 0.0f, 1.0f}; // Soft specular
+    GLfloat light2_position[] = {0.0f, 0.0f, 0.2f, 1.0f}; // Behind the scene
+
+    glLightfv(GL_LIGHT2, GL_AMBIENT, light2_ambient);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, light2_diffuse);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, light2_specular);
+    glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
+
+    glEnable(GL_LIGHT2);
+}
+
+void setupFog() {
+    GLfloat fogColor[] = {0.2f, 0.2f, 0.2f, 1.0f}; // Soft gray fog
+    glFogi(GL_FOG_MODE, GL_EXP2); // Exponential squared fog for a smooth density
+    glFogfv(GL_FOG_COLOR, fogColor);
+    glFogf(GL_FOG_DENSITY, 0.05f); // Adjust density for desired softness
+    glHint(GL_FOG_HINT, GL_DONT_CARE); // Let OpenGL choose the fog quality
+    glEnable(GL_FOG);
+}
+
+void updateLightAnimation(int value) {
+    const float brightnessStep = 0.02f; // Adjust step size for speed of animation
+
+    if (isFadingIn) {
+        lightBrightness += brightnessStep;
+        if (lightBrightness >= MAX_BRIGHTNESS) {
+            lightBrightness = MAX_BRIGHTNESS;
+            lightOn = true;
+            isFadingIn = false; // Animation complete
+        } else {
+            glutTimerFunc(16, updateLightAnimation, 0); // Continue fading in
+        }
+    }
+    else if (isFadingOut) {
+        lightBrightness -= brightnessStep;
+        if (lightBrightness <= MIN_BRIGHTNESS) {
+            lightBrightness = MIN_BRIGHTNESS;
+            lightOn = false;
+            isFadingOut = false; // Animation complete
+        } else {
+            glutTimerFunc(16, updateLightAnimation, 0); // Continue fading out
+        }
+    }
+
+    setupLighting(); // Update lighting configuration with new brightness
+    glutPostRedisplay(); // Redraw the scene with updated lighting
 }
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    setupLighting();
-    setupMaterial();
     // Adjust the camera
     gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
               0.0, 1.0, 0.0,
               0.0, 1.0, 0.0);
     glRotatef(-90, 1.0f, 0.0f, 0.0f);
+
+    // Enable blending for transparency when light is off
+    if (!lightOn) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_ALPHA_TEST);
+        glAlphaFunc(GL_GREATER, 0.1f); // Discard fragments with low alpha
+    } else {
+        glDisable(GL_BLEND);
+        glDisable(GL_ALPHA_TEST);
+    }
+
+    // Setup lighting based on current state
+    setupLighting();
+
+    // Setup material based on current state
+    setupMaterial();
+
+    setupFog();
+    setupAdditionalLights();
+
+    //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
@@ -662,9 +827,10 @@ void display() {
             glTranslatef(0.0f, 0.5f, 0.0f);
             glRotatef(-90, 0.0f, 1.0f, 0.0f);
             glRotatef(75, 0.0f, 0.0f, 1.0f);
-            drawWings();
+            drawWings(true);
         }glPopMatrix();
     }glPopMatrix();
+
     glPushMatrix();
     {
         glRotatef(180, 0.0f, 0.0f, 1.0f);
@@ -679,7 +845,7 @@ void display() {
                 glTranslatef(0.0f, 0.5f, 0.0f);
                 glRotatef(-90, 0.0f, 1.0f, 0.0f);
                 glRotatef(75, 0.0f, 0.0f, 1.0f);
-                drawWings();
+                drawWings(false);
             }glPopMatrix();
         }glPopMatrix();
     }glPopMatrix();
@@ -696,6 +862,7 @@ void display() {
         drawTailWithTaperedTriangles();
     }
     glPopMatrix();
+
     glDisable(GL_LIGHTING);
     glPushMatrix();
     {
@@ -716,24 +883,47 @@ void display() {
         }glPopMatrix();
     }
     glPopMatrix();
+
+    if (!lightOn) {
+        glDisable(GL_BLEND);
+        glDisable(GL_ALPHA_TEST);
+    }
+
     glutSwapBuffers();
 }
 
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'Z':
     case 'z':
         if (zoom < 10.0f) zoom += 0.1f;
-        break;
-    case 'X':
+        break;    // Zoom in
     case 'x':
         if (zoom > 4.0f) zoom -= 0.1f;
         break;
-    case 27:
-        exit(0);
+    case 'b':
+        // Toggle brightness between dim and bright
+        if (lightBrightness < 0.6f) {
+            lightBrightness = 1.0f; // Bright
+        } else {
+            lightBrightness = 0.3f; // Dim
+        }
+        glutPostRedisplay();
         break;
-    default:
+    case 'o':
+        // Toggle light on/off
+        lightOn = !lightOn;
+        glutPostRedisplay();
         break;
+    case 'l': // Handle lighting animation
+            if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
+                if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
+                    isFadingOut = true; // Start fading out
+                } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
+                    isFadingIn = true; // Start fading in
+                }
+                glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
+            }
+            break;
     }
     glutPostRedisplay();
 }
@@ -786,10 +976,10 @@ void handleMouse(int button, int state, int x, int y)
 void handleSpecialKeys(int key, int x, int y) {
     switch (key) {
     case GLUT_KEY_DOWN:
-        if (height >= -6.0f) {height -= 0.2f;}
+        if (height >= -5.0f) {height -= 0.2f;}
         break; // Rotate up
     case GLUT_KEY_UP:
-        if (height <= 6.0f) {height += 0.2f;}
+        if (height <= 5.0f) {height += 0.2f;}
         break; // Rotate down
     case GLUT_KEY_LEFT:
         angleH -= 0.1f;
@@ -809,17 +999,6 @@ void reshape(int width, int height) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-void init() {
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0, 0.0, 0.0, 1.0);
-    stbi_set_flip_vertically_on_load(true);
-    /*
-    Remember to change the document name path into your version...
-    */
-    texture = loadTexture("C:\\Users\\kenho\\Documents\\Programming Practice\\TestGL\\UI.jpg");
-    texture2 = loadTexture("C:\\Users\\kenho\\Documents\\Programming Practice\\TestGL\\PhoneUI.jpg");
-}
-
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -827,13 +1006,15 @@ int main(int argc, char** argv) {
     glutCreateWindow("OpenGL Sphere with Depth");
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-    init();
+
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
+    glEnable(GL_NORMALIZE);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
     glutMouseFunc(handleMouse);
-    glutTimerFunc(6, openWings, open);
+
+    init();
     glutMainLoop();
     return 0;
 }
