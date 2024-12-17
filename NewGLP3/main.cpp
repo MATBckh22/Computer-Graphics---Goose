@@ -682,10 +682,15 @@ void setupLighting() {
 }
 
 void setupMaterial() {
-    GLfloat mat_ambient[] = {0.4, 0.4, 0.4, 0.2};
-    GLfloat mat_diffuse[] = {0.7, 0.7, 0.7, 0.2};
-    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 0.2};
-    GLfloat mat_shininess[] = {50.0};
+    if (lightOn) {
+        // Set material properties with emission based on brightness
+        GLfloat mat_ambient[]    = {0.4f, 0.35f, 0.3f, 1.0f}; // Slightly warmer ambient
+        GLfloat mat_diffuse[]    = {0.7f, 0.65f, 0.6f, 1.0f}; // Slightly warmer diffuse
+        GLfloat mat_specular[]   = {0.9f, 0.85f, 0.75f, 1.0f}; // Soft specular
+        GLfloat mat_shininess[]  = {20.0f}; // Reduced shininess for softer highlights
+
+        // Calculate emission color based on brightness (warm yellow)
+        GLfloat mat_emission[]   = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.1f * lightBrightness, 1.0f};
 
         glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
         glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
@@ -778,8 +783,6 @@ void updateLightAnimation(int value) {
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-    setupLighting();
-    setupMaterial();
     // Adjust the camera
     gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
               0.0, 1.0, 0.0,
