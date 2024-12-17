@@ -962,7 +962,7 @@ void openWings(int value)
 
 void handleMouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && moving == false)
     {
         height1 = height2 = 2.0f;
         if(open == 0) {open = 1;}
@@ -1006,15 +1006,16 @@ int main(int argc, char** argv) {
     glutCreateWindow("OpenGL Sphere with Depth");
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-
+    
+    init();
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
     glutMouseFunc(handleMouse);
-
-    init();
+    glutTimerFunc(6, openWings, open);
+    
     glutMainLoop();
     return 0;
 }
