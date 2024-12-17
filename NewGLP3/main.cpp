@@ -623,10 +623,10 @@ void setupLighting() {
     glEnable(GL_LIGHT0);
 }
 
-void setupMaterial() {
-    GLfloat mat_ambient[] = {0.4, 0.4, 0.4, 0.2};
-    GLfloat mat_diffuse[] = {0.7, 0.7, 0.7, 0.2};
-    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 0.2};
+void setupMaterial(float r, float g, float b, float a) {
+    GLfloat mat_ambient[] = {0.5*r, 0.5*g, 0.5*b, a};
+    GLfloat mat_diffuse[] = {0.7*r, 0.7*g, 0.7*b, a};
+    GLfloat mat_specular[] = {r, g, b, a};
     GLfloat mat_shininess[] = {50.0};
 
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
@@ -639,7 +639,7 @@ void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     setupLighting();
-    setupMaterial();
+    setupMaterial(1.0f, 1.0f, 1.0f, 0.2f);
     // Adjust the camera
     gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
               0.0, 1.0, 0.0,
