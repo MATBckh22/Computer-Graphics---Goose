@@ -624,8 +624,8 @@ void setupLighting() {
 }
 
 void setupMaterial(float r, float g, float b, float a) {
-    GLfloat mat_ambient[] = {0.5*r, 0.5*g, 0.5*b, a};
-    GLfloat mat_diffuse[] = {0.7*r, 0.7*g, 0.7*b, a};
+    GLfloat mat_ambient[] = {0.5f*r, 0.5f*g, 0.5f*b, a};
+    GLfloat mat_diffuse[] = {0.7f*r, 0.f*g, 0.7f*b, a};
     GLfloat mat_specular[] = {r, g, b, a};
     GLfloat mat_shininess[] = {50.0};
 
