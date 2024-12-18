@@ -15,18 +15,24 @@ bool moving2 = true;
 int maxAngle = 83;
 float placed = 0.53f;
 
+float wireLength = 0.0f;      // Current length of the wire
+const float maxWireLength = 4.0f; // Maximum wire length
+bool wireAnimating = false;   // Flag to indicate wire animation
+float cubePosition = -5.2f;  // Position of the cube along the wire
+bool charging = false;
+
 // Brightness control variables
 float lightBrightness = 0.3f; // Initial brightness (dim)
-const float MAX_BRIGHTNESS = 1.0f;
+const float MAX_BRIGHTNESS = 0.8f;
 const float MIN_BRIGHTNESS = 0.0f;
 
 bool isFadingIn = false;   // Indicates if the light is fading in
 bool isFadingOut = false;  // Indicates if the light is fading out
 
 // Light state variable
-bool lightOn = true; // Light is initially on
+bool lightOn = false; // Light is initially on
 
-GLuint texture, texture2;
+GLuint texture, texture2, groundTexture;
 GLuint loadTexture(const char* filename) {
     int width, height, channels;
     unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
@@ -44,6 +50,9 @@ GLuint loadTexture(const char* filename) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Repeat horizontally
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Repeat vertically
+
     stbi_image_free(data);  // Free image data after creating texture
     return textureID;
 }
@@ -56,6 +65,7 @@ void init() {
     */
     texture = loadTexture("D:/Downloads/UI.jpg");
     texture2 = loadTexture("D:/Downloads/PhoneUI.jpg");
+    groundTexture = loadTexture("D:/Downloads/wooden floor.jpg");
 }
 
 int defaultWing(int openValue) {
@@ -447,7 +457,7 @@ void drawNeckWithStackedSpheres() {
     float baseRadius = 0.3f;    // Radius of the largest sphere at the base
     float tipRadius = 0.1f;     // Radius of the smallest sphere at the tip
     float neckLength = 1.5f;    // Total length of the neck
-    float neckCurve = 0.7f;     // Degree of the curve
+    float neckCurve = 0.5f;     // Degree of the curve
 
     glPushMatrix();
     {
@@ -589,7 +599,7 @@ void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int s
                 nz1 /= length1;
             }
 
-            glNormal3f(nx1, ny1, nz1);
+            glNormal3f(-nx1, -ny1, -nz1);
             glVertex3f(x1, y1, z1);
 
             // Vertex 2
@@ -609,7 +619,7 @@ void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int s
                 nz2 /= length2;
             }
 
-            glNormal3f(nx2, ny2, nz2); // Set normal for lighting
+            glNormal3f(-nx2, -ny2, -nz2); // Set normal for lighting
             glVertex3f(x2, y2, z2);
         }
         glEnd();
@@ -630,6 +640,128 @@ void drawSphereWithFlatBottom(float radiusX, float radiusY, float radiusZ, int s
     glEnd();
 }
 
+void drawGround() {
+    float groundSize = 5.0f; // Size of the ground plane
+
+    glEnable(GL_TEXTURE_2D); // Enable texturing
+    glBindTexture(GL_TEXTURE_2D, groundTexture); // Bind the ground texture
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glColor3f(1.0f, 1.0f, 1.0f); // Ensure the texture color is used
+
+    glBegin(GL_QUADS);
+    {
+        // Define texture coordinates and vertices
+        // Adjust the texture coordinates (e.g., multiply by a factor) to control tiling
+        float tiling = 10.0f; // Number of times the texture repeats across the ground
+
+        glNormal3f(0.0f, 0.0f, 1.0f);
+
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex3f(-groundSize, -groundSize, -0.5f);
+
+        glTexCoord2f(tiling, 0.0f);
+        glVertex3f(-groundSize, groundSize, -0.5f);
+
+        glTexCoord2f(tiling, tiling);
+        glVertex3f(groundSize, groundSize, -0.5f);
+
+        glTexCoord2f(0.0f, tiling);
+        glVertex3f(groundSize, -groundSize, -0.5f);
+    }
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D); // Disable texturing
+}
+
+void drawWalls() {
+    // Enable lighting if not already enabled
+    glEnable(GL_LIGHTING);
+
+    // Set wall material so it reflects light well
+    GLfloat wall_ambient[]  = {0.2f, 0.2f, 0.2f, 1.0f};
+    GLfloat wall_diffuse[]  = {0.7f, 0.7f, 0.7f, 1.0f};
+    GLfloat wall_specular[] = {0.2f, 0.2f, 0.2f, 1.0f};
+    GLfloat wall_shininess[] = {10.0f};
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, wall_ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, wall_diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, wall_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, wall_shininess);
+
+    // Coordinates for walls
+    float groundSize = 5.0f;  // same size as the ground
+    float wallHeight = 3.0f;  // how high the walls go above the ground
+
+    // Back wall: spanning x = -5 to x = 5 at y = 5
+    // Normal points inward (towards negative Y)
+    glBegin(GL_QUADS);
+    glNormal3f(0.0f, -1.0f, 0.0f);
+    glVertex3f(-groundSize,  groundSize, -0.5f);
+    glVertex3f( groundSize,  groundSize, -0.5f);
+    glVertex3f( groundSize,  groundSize, wallHeight);
+    glVertex3f(-groundSize,  groundSize, wallHeight);
+    glEnd();
+
+    // Left wall: spanning y = -5 to y = 5 at x = -5
+    // Normal points inward (towards positive X)
+    glBegin(GL_QUADS);
+    glNormal3f(1.0f, 0.0f, 0.0f);
+    glVertex3f(-groundSize, -groundSize, -0.5f);
+    glVertex3f(-groundSize,  groundSize, -0.5f);
+    glVertex3f(-groundSize,  groundSize, wallHeight);
+    glVertex3f(-groundSize, -groundSize, wallHeight);
+    glEnd();
+
+    // Right wall: spanning y = -5 to y = 5 at x = 5
+    // Normal points inward (towards negative X)
+    glBegin(GL_QUADS);
+    glNormal3f(-1.0f, 0.0f, 0.0f);
+    glVertex3f( groundSize, -groundSize, -0.5f);
+    glVertex3f( groundSize,  groundSize, -0.5f);
+    glVertex3f( groundSize,  groundSize, wallHeight);
+    glVertex3f( groundSize, -groundSize, wallHeight);
+    glEnd();
+}
+
+void drawWire(float length) {
+    GLUquadric* quad = gluNewQuadric();
+
+    glPushMatrix();
+    {
+        glColor3f(0.7f, 0.7f, 0.7f); // Gray color for the wire
+        glTranslatef(0.0f, -5.2f, -0.2f); // Start position of the wire near the tail
+        glRotatef(-90.0f, 1.0f, 0.0f, 0.0f); // Align the cylinder vertically
+        gluCylinder(quad, 0.05f, 0.05f, length, 20, 20); // Dynamic length cylinder
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    {
+        if (charging) glColor3f(0.0f, 0.8f, 0.0f); // green when charging
+        else glColor3f(0.8f, 0.0f, 0.0f); // red when not in charge
+
+        // Position the cube at the end of the wire
+        glTranslatef(0.0f, cubePosition, -0.2f); // Move along the wire length
+        glScalef(1.0f, 2.5f, 1.0f);
+        glutSolidCube(0.15f); // Cube size 0.15
+    }
+    glPopMatrix();
+
+    gluDeleteQuadric(quad);
+}
+
+void animateWire(int value) {
+    if (wireAnimating && wireLength < maxWireLength) {
+        wireLength += 0.05f; // Adjust speed of the wire animation
+        cubePosition += 0.05f;
+        glutPostRedisplay();
+        glutTimerFunc(16, animateWire, 0); // Recur every ~16ms for 60 FPS
+    } else {
+        charging = true;
+        wireAnimating = false; // Stop the animation when max length is reached
+    }
+}
+
 void setupLighting() {
     if (lightOn) {
         // Set a low global ambient light for a softer overall lighting
@@ -639,7 +771,7 @@ void setupLighting() {
         // Set up light properties based on current brightness
         GLfloat light_ambient[]  = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.15f * lightBrightness, 1.0f}; // Warm ambient
         GLfloat light_diffuse[]  = {0.6f * lightBrightness, 0.5f * lightBrightness, 0.3f * lightBrightness, 1.0f}; // Warm diffuse
-        GLfloat light_specular[] = {0.8f, 0.7f, 0.5f, 1.0f}; // Soft specular
+        GLfloat light_specular[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Soft specular
 
         // Position the light at the object's location (assuming object is at origin)
         // light from below
@@ -808,6 +940,8 @@ void display() {
 
     setupFog();
     setupAdditionalLights();
+    drawGround();
+    //drawWalls();
 
     //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
@@ -889,6 +1023,10 @@ void display() {
         glDisable(GL_ALPHA_TEST);
     }
 
+    if (wireLength > 0.0f) {
+            drawWire(wireLength);
+        }
+
     glutSwapBuffers();
 }
 
@@ -899,15 +1037,6 @@ void handleKeyboard(unsigned char key, int x, int y) {
         break;    // Zoom in
     case 'x':
         if (zoom > 4.0f) zoom -= 0.1f;
-        break;
-    case 'b':
-        // Toggle brightness between dim and bright
-        if (lightBrightness < 0.6f) {
-            lightBrightness = 1.0f; // Bright
-        } else {
-            lightBrightness = 0.3f; // Dim
-        }
-        glutPostRedisplay();
         break;
     case 'o':
         // Toggle light on/off
@@ -962,11 +1091,20 @@ void openWings(int value)
 
 void handleMouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && moving == false)
-    {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         height1 = height2 = 2.0f;
-        if(open == 0) {open = 1;}
-        else {open = 0;}
+
+        if (open == 0) {
+            open = 1;
+        } else {
+            open = 0;
+            wireAnimating = true;       // Start wire animation
+            wireLength = 0.0f;          // Reset wire length
+            cubePosition = -5.2f;
+            charging = false;
+            glutTimerFunc(16, animateWire, 0); // Start animation
+        }
+
         moving = true;
         glutTimerFunc(6, openWings, open);
     }
@@ -1006,16 +1144,15 @@ int main(int argc, char** argv) {
     glutCreateWindow("OpenGL Sphere with Depth");
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
-    
-    init();
+
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
     glutKeyboardFunc(handleKeyboard);    // Register keyboard input function
     glutSpecialFunc(handleSpecialKeys);  // Register special keys function
     glutMouseFunc(handleMouse);
-    glutTimerFunc(6, openWings, open);
-    
+
+    init();
     glutMainLoop();
     return 0;
 }
