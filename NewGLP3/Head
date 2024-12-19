@@ -1,0 +1,239 @@
+#include <GL/glut.h>
+
+static int angleX = -90;
+static int angleY = 0;
+static int angleZ = 90;
+
+/*
+// Control points for the Bezier surface
+GLfloat ctrlPoints[4][5][3] = {
+    {{-0.5, -1.5, 0.0}, {-0.5, -1.5, 1.0}, {0.5, -1.5, 1.0}, {0.5, -1.5, 0.0}, {-0.5, -1.5, 0.0}},
+    {{-0.5, -0.5, 1.0}, {-0.5, -0.5, 2.0}, {0.5, -0.5, 2.0}, {0.5, -0.5, 1.0},{-0.5, -0.5, 1.0}},
+    {{-0.5, 0.5, -1.0}, {-0.5, 0.5, 0.0}, {0.5, 0.5, 0.0}, {0.5, 0.5, -1.0}, {-0.5, 0.5, -1.0}},
+    {{-0.5, 1.5, 0.0}, {-0.5, 1.5, 1.0}, {0.5, 1.5, 1.0}, {0.5, 1.5, 0.0}, {-0.5, 1.5, 0.0}}
+};
+*/
+
+/*
+// Control points for the goose head (Bézier surface)
+GLfloat ctrlPoints[4][4][3] = {
+    {{-1.0, -1.0,  0.0}, {-0.5, -1.0,  0.5}, {0.5, -1.0,  0.5}, {1.0, -1.0,  0.0}},
+    {{-1.0,  0.0,  1.0}, {-0.5,  0.0,  1.5}, {0.5,  0.0,  1.5}, {1.0,  0.0,  1.0}},
+    {{-1.0,  1.0,  0.5}, {-0.5,  1.0,  1.0}, {0.5,  1.0,  1.0}, {1.0,  1.0,  0.5}},
+    {{-1.0,  1.5,  0.0}, {-0.5,  1.5,  0.5}, {0.5,  1.5,  0.5}, {1.0,  1.5,  0.0}}
+};
+*/
+
+/*
+// Control points for the goose head (Bézier surface)
+GLfloat ctrlPoints[4][5][3] = {
+    {{-1.0, -1.0,  0.0}, {-0.75, -1.0,  0.5}, {0.0, -1.0,  0.75}, {0.75, -1.0,  0.5}, {1.0, -1.0,  0.0}},
+    {{-1.0,  0.0,  1.0}, {-0.75,  0.0,  1.25}, {0.0,  0.0,  1.5}, {0.75,  0.0,  1.25}, {1.0,  0.0,  1.0}},
+    {{-1.0,  1.0,  0.5}, {-0.75,  1.0,  0.75}, {0.0,  1.0,  1.0}, {0.75,  1.0,  0.75}, {1.0,  1.0,  0.5}},
+    {{-1.0,  1.5,  0.0}, {-0.75,  1.5,  0.5}, {0.0,  1.5,  0.75}, {0.75,  1.5,  0.5}, {1.0,  1.5,  0.0}}
+};
+*/
+
+// Control points for the goose head (Bézier surface)
+GLfloat ctrlPoints[4][5][3] = {
+    {{0.0, -0.75,  0.25}, {-1.0, -0.75,  0.5}, {0.0, -0.75, 1.25}, {1.0, -0.75,   0.5}, {0.0, -0.75,  0.25}}, // 4th
+    {{0.0,  0.25,   0.0}, {-1.5,  0.25, 1.25}, {0.0,  0.25,  2.5}, {1.5,  0.25,  1.25}, {0.0,  0.25,   0.0}}, // 3rd
+    {{0.0,   1.0,   0.0}, {-2.0,   1.0, 0.75}, {0.0,   1.0,  1.0}, {2.0,   1.0,  0.75}, {0.0,   1.0,   0.0}}, // 2nd
+    {{0.0,   1.0,   0.3}, { 0.0,   1.5,  0.5}, {0.0,  0.75, 0.75}, {0.0,   1.5,   0.5}, {0.0,   1.0,   0.3}}  // 1st
+};
+
+/*
+// Control points for the goose head (Bézier surface)
+GLfloat ctrlPoints[5][5][3] = {
+    {{-1.0, -1.5, 0.0}, {-0.5, -1.5, 0.5}, {0.0, -1.5, 0.5}, {0.5, -1.5, 0.5}, {1.0, -1.5, 0.0}},
+    {{-1.0, -0.5, 0.5}, {-0.5, -0.5, 1.0}, {0.0, -0.5, 1.0}, {0.5, -0.5, 1.0}, {1.0, -0.5, 0.5}},
+    {{-1.0,  0.5, 0.7}, {-0.5,  0.5, 1.2}, {0.0,  0.5, 1.2}, {0.5,  0.5, 1.2}, {1.0,  0.5, 0.7}},
+    {{-1.0,  1.0, 0.3}, {-0.5,  1.0, 0.8}, {0.0,  1.0, 0.8}, {0.5,  1.0, 0.8}, {1.0,  1.0, 0.3}},
+    {{-1.0,  1.5, 0.0}, {-0.5,  1.5, 0.5}, {0.0,  1.5, 0.5}, {0.5,  1.5, 0.5}, {1.0,  1.5, 0.0}}
+};
+*/
+
+void initGL()
+{
+    glClearColor(0.0, 0.0, 0.0, 1.0); // Black background
+    // glClearColor(1.0, 1.0, 1.0, 0.0); // White background
+    glEnable(GL_MAP2_VERTEX_3);       // Enable 2D evaluator
+
+    // Define the Bezier surface using control points
+    glMap2f(GL_MAP2_VERTEX_3,         // Type of data (3D vertices)
+            0.0, 1.0,                 // u parameter range
+            3,                        // u stride (distance between control points in u direction)
+            5,                        // u order
+            0.0, 1.0,                 // v parameter range
+            15,                       // v stride (distance between control points in v direction)
+            4,                        // v order
+            &ctrlPoints[0][0][0]);    // Pointer to control points
+
+    glEnable(GL_AUTO_NORMAL);         // Enable automatic normal generation
+    glEnable(GL_LIGHTING);            // Enable lighting
+    glEnable(GL_LIGHT0);              // Enable a light source
+    glEnable(GL_DEPTH_TEST);          // Enable depth testing
+}
+
+void drawBeak()
+{
+    glPointSize(10.0);
+    glColor3f(1.0f, 0.0f, 1.0f);
+    glTranslatef(0.0f, 0.75f, -0.2f);
+    glScalef(1.5f, 1.75f, 1.5f);
+
+    glBegin(GL_POINTS);
+        glVertex3f(-0.33f, -0.74f, 0.25f); // A
+        glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+        glVertex3f(-0.25f, -0.74f, 0.75f); // C
+        glVertex3f(0.33f, -0.74f, 0.25f);  // D
+        glVertex3f(0.2f, -1.25f, 0.25f);   // E
+        glVertex3f(0.25f, -0.74f, 0.75f);  // F
+    glEnd();
+
+    // Draw the front face (triangle ABC)
+    glBegin(GL_TRIANGLES);
+        glColor3f(1.0f, 0.75f, 0.0f);
+        glVertex3f(-0.33f, -0.74f, 0.25f); // A
+        glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+        glVertex3f(-0.25f, -0.74f, 0.75f); // C
+    glEnd();
+
+    // Draw the back face (triangle DEF)
+    glBegin(GL_TRIANGLES);
+        glColor3f(0.95f, 0.55f, 0.16f);
+        glVertex3f(0.33f, -0.74f, 0.25f);  // D
+        glVertex3f(0.2f, -1.25f, 0.25f);   // E
+        glVertex3f(0.25f, -0.74f, 0.75f);  // F
+    glEnd();
+
+    // Draw the bottom rectangle (ABED)
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 0.67f, 0.11f);
+        glVertex3f(-0.33f, -0.74f, 0.25f); // A
+        glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+        glVertex3f(0.2f, -1.25f, 0.25f);   // E
+        glVertex3f(0.33f, -0.74f, 0.25f);  // D
+    glEnd();
+
+    // Draw the vertical side (ACFD)
+    glBegin(GL_QUADS);
+    glColor3f(0.96f, 0.73f, 0.27f);
+        glColor3f(1.0f, 0.75f, 0.0f);
+        glVertex3f(-0.33f, -0.74f, 0.25f); // A
+        glVertex3f(-0.25f, -0.74f, 0.75f); // C
+        glVertex3f(0.25f, -0.74f, 0.75f);  // F
+        glVertex3f(0.33f, -0.74f, 0.25f);  // D
+    glEnd();
+
+    // Draw the slanted side (BCFE)
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 0.65f, 0.0f);
+        glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+        glVertex3f(-0.25f, -0.74f, 0.75f); // C
+        glVertex3f(0.25f, -0.74f, 0.75f);  // F
+        glVertex3f(0.2f, -1.25f, 0.25f);   // E
+    glEnd();
+
+    // Left eye
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glTranslatef(-0.25f, -0.4f, 0.75f);
+    glutSolidSphere(0.05f, 50, 50);
+
+    // Right eye
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glTranslatef(0.5f, 0.0f, 0.0f);
+    glutSolidSphere(0.05f, 50, 50);
+}
+
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+    glRotatef(angleX, 1.0, 0.0, 0.0);
+    glRotatef(angleY, 0.0, 1.0, 0.0);
+    glRotatef(angleZ, 0.0, 0.0, 1.0);        // Rotate the surface for better view
+
+    // Draw the Bezier surface as a grid of points
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0); // Define the grid
+    glEvalMesh2(GL_FILL, 0, 20, 0, 20);      // Evaluate the grid to render the surface
+
+    // Draw the control points
+    glColor3f(1.0, 0.0, 0.0);                // Red for control points
+    glPointSize(5.0);
+    glBegin(GL_POINTS);
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            glVertex3fv(ctrlPoints[i][j]);
+        }
+    }
+    glEnd();
+
+    drawBeak();
+
+    glPopMatrix();
+    glFlush();
+    glutSwapBuffers();
+}
+
+void reshape(int w, int h)
+{
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    if (w <= h)
+        glOrtho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
+                 2.0 * (GLfloat)h / (GLfloat)w, -10.0, 10.0);
+    else
+        glOrtho(-2.0 * (GLfloat)w / (GLfloat)h,
+                 2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10.0, 10.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+static void key(unsigned char key, int x, int y)                //  Response button message
+{
+    switch (key)
+    {
+        case 27 :
+        case 'q':
+            exit(0);
+            break;
+        case 'x':
+            angleX += 5;
+            break;
+        case 'X':
+            angleX -= 5;
+            break;
+        case 'y':
+            angleY += 5;
+            break;
+        case 'Y':
+            angleY -= 5;
+            break;
+        case 'z':
+            angleZ += 5;
+            break;
+        case 'Z':
+            angleZ -= 5;
+            break;
+    }
+
+    glutPostRedisplay();
+}
+
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Bezier Surface");
+    initGL();
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutKeyboardFunc(key);
+    glutMainLoop();
+    return 0;
+}
