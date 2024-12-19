@@ -4,8 +4,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "D:/Downloads/stb_image.h"
 
-float angleH  = 0.0f;
-float height = 0.0f;               // Rotation angles
+float angleH  = M_PI/2;
+float height = 2.0f;               // Rotation angles
 float height1 = 2.0f;
 float height2 = 2.0f;
 float zoom = 7.0f;                                    // Zoom level
@@ -13,7 +13,9 @@ int open = 1;
 bool moving = true;
 bool moving2 = true;
 int maxAngle = 83;
-float placed = 0.53f;
+float placed = 0.17f;
+int neckBow = 0;
+int isBowing = 0;
 
 float wireLength = 0.0f;      // Current length of the wire
 const float maxWireLength = 4.0f; // Maximum wire length
@@ -78,6 +80,7 @@ int wingAngle = defaultWing(open);
 void drawTablet() {
     glPushMatrix();
     {
+        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
@@ -136,6 +139,7 @@ void drawTablet() {
 void drawPhone() {
     glPushMatrix();
     {
+        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
@@ -986,11 +990,11 @@ void display() {
 
     glPushMatrix();
     {
-        glTranslatef(0.0f, 0.3f, -0.05f);
+        glTranslatef(0.0f, 0.3f, 0.05f);
+        glRotatef(-neckBow, 1.0f, 0.0f, 0.0f);
         drawNeckWithStackedSpheres();
     }
     glPopMatrix();
-
     glPushMatrix();
     {
         drawTailWithTaperedTriangles();
@@ -1001,18 +1005,18 @@ void display() {
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
-        glTranslatef(0.0f, 0.0f, -1.15f);
+        glTranslatef(0.0f, 0.0f, -(0.55f+0.1f*pow((double)neckBow/30, 2)));
         glScalef(3.3f, 3.3f, 3.3f);
         glPushMatrix();
         {
-            glTranslatef(0.0f, height1, 0.0f); //lowest: 0.53f
-            glRotatef(-25, 1.0f, 0.0f, 0.0f);
+            glTranslatef(0.0f, height1, (0.06f*pow((double)neckBow/30, 2))); //lowest: 0.53f
+            glRotatef(-(25+(int)(1.8*(float)neckBow)), 1.0f, 0.0f, 0.0f);
             drawTablet();
         }glPopMatrix();
         glPushMatrix();
         {
-            glTranslatef(0.0f, height2, 0.0f);
-            glRotatef(-25, 1.0f, 0.0f, 0.0f);
+            glTranslatef(0.0f, height2, (0.05f*pow((double)neckBow/30, 2)));
+            glRotatef(-(25+(int)(1.8*(float)neckBow)), 1.0f, 0.0f, 0.0f);
             drawPhone();
         }glPopMatrix();
     }
@@ -1030,29 +1034,60 @@ void display() {
     glutSwapBuffers();
 }
 
+void movingNeck(int value)
+{
+    if (value == 1 && neckBow < 30)
+    {
+        neckBow += 1;
+        glutPostRedisplay();
+        glutTimerFunc(16, movingNeck, value);
+    }
+    else if (value == 0 && neckBow > 0)
+    {
+        neckBow -= 1;
+        glutPostRedisplay();
+        glutTimerFunc(16, movingNeck, value);
+    }
+}
+
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
+    case 'Z':
     case 'z':
         if (zoom < 10.0f) zoom += 0.1f;
         break;    // Zoom in
+    case 'X':
     case 'x':
         if (zoom > 4.0f) zoom -= 0.1f;
         break;
+    case 'O':
     case 'o':
         // Toggle light on/off
         lightOn = !lightOn;
         glutPostRedisplay();
         break;
+    case 'L':
     case 'l': // Handle lighting animation
-            if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
-                if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
-                    isFadingOut = true; // Start fading out
-                } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
-                    isFadingIn = true; // Start fading in
-                }
-                glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
+        if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
+            if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
+                isFadingOut = true; // Start fading out
+            } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
+                isFadingIn = true; // Start fading in
             }
-            break;
+            glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
+        }
+        break;
+    case 'A':
+    case 'a':
+        if (isBowing == 0) {isBowing = 1;}
+        else {isBowing = 0;}
+        glutTimerFunc(16, movingNeck, isBowing);
+        break;
+    case 27:
+        exit(0);
+        break;
+    default:
+        break;
     }
     glutPostRedisplay();
 }
