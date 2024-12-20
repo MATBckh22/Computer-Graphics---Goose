@@ -13,7 +13,7 @@ int open = 1;
 bool moving = true;
 bool moving2 = true;
 int maxAngle = 83;
-float placed = 0.53f;
+float placed = 0.17f;
 int neckBow = 0;
 int isBowing = 0;
 
@@ -80,6 +80,7 @@ int wingAngle = defaultWing(open);
 void drawTablet() {
     glPushMatrix();
     {
+        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
@@ -138,6 +139,7 @@ void drawTablet() {
 void drawPhone() {
     glPushMatrix();
     {
+        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
