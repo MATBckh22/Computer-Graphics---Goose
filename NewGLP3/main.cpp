@@ -4,8 +4,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "D:/Downloads/stb_image.h"
 
-float angleH  = M_PI/2;
-float height = 2.0f;               // Rotation angles
+float angleH  = 0.0f;
+float height = 0.0f;               // Rotation angles
 float height1 = 2.0f;
 float height2 = 2.0f;
 float zoom = 7.0f;                                    // Zoom level
@@ -13,7 +13,7 @@ int open = 1;
 bool moving = true;
 bool moving2 = true;
 int maxAngle = 83;
-float placed = 0.17f;
+float placed = 0.53f;
 int neckBow = 0;
 int isBowing = 0;
 
@@ -80,7 +80,6 @@ int wingAngle = defaultWing(open);
 void drawTablet() {
     glPushMatrix();
     {
-        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
@@ -139,7 +138,6 @@ void drawTablet() {
 void drawPhone() {
     glPushMatrix();
     {
-        glTranslatef(0.0f, 0.4f, 0.0f);
         glBegin(GL_QUADS);
         {
             glColor3f(0.1f, 0.1f, 0.1f);
@@ -453,6 +451,130 @@ void drawWings(bool isLeft) {
     }glPopMatrix();
 }
 
+void drawHead()
+{
+    // Control points for the goose head (Bézier surface)
+    GLfloat ctrlPoints[4][5][3] = {
+        {{0.0, -0.75,  0.25}, {-1.0, -0.75,  0.5}, {0.0, -0.75, 1.25}, {1.0, -0.75,   0.5}, {0.0, -0.75,  0.25}}, // 4th
+        {{0.0,  0.25,   0.0}, {-1.5,  0.25, 1.25}, {0.0,  0.25,  2.5}, {1.5,  0.25,  1.25}, {0.0,  0.25,   0.0}}, // 3rd
+        {{0.0,   1.0,   0.0}, {-2.0,   1.0, 0.75}, {0.0,   1.0,  1.0}, {2.0,   1.0,  0.75}, {0.0,   1.0,   0.0}}, // 2nd
+        {{0.0,   1.0,   0.3}, { 0.0,   1.5,  0.5}, {0.0,  0.75, 0.75}, {0.0,   1.5,   0.5}, {0.0,   1.0,   0.3}}  // 1st
+    };
+    glEnable(GL_MAP2_VERTEX_3);       // Enable 2D evaluator
+    // Define the Bezier surface using control points
+    glMap2f(GL_MAP2_VERTEX_3,         // Type of data (3D vertices)
+            0.0, 1.0,                 // u parameter range
+            3,                        // u stride (distance between control points in u direction)
+            5,                        // u order
+            0.0, 1.0,                 // v parameter range
+            15,                       // v stride (distance between control points in v direction)
+            4,                        // v order
+            &ctrlPoints[0][0][0]);    // Pointer to control points
+    glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0); // Define the grid
+    glEvalMesh2(GL_FILL, 0, 20, 0, 20);      // Evaluate the grid to render the surface
+
+    /*
+    // for debug
+    glColor3f(1.0, 0.0, 0.0);
+    glPointSize(5.0);
+    glBegin(GL_POINTS);
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            glVertex3fv(ctrlPoints[i][j]);
+        }
+    }
+    glEnd();
+    */
+
+    glDisable(GL_MAP2_VERTEX_3);
+}
+
+void drawBeak()
+{
+    glPushMatrix();
+    {
+        glColor3f(1.0f, 0.0f, 1.0f);
+        glTranslatef(0.0f, 0.39f, -0.15f);
+        glScalef(1.5f, 1.2f, 1.5f);
+
+        // for debug
+        /*
+        glBegin(GL_POINTS);
+            glVertex3f(-0.33f, -0.74f, 0.25f); // A
+            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+            glVertex3f(-0.25f, -0.74f, 0.75f); // C
+            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+            glVertex3f(0.2f, -1.25f, 0.25f);   // E
+            glVertex3f(0.25f, -0.74f, 0.75f);  // F
+        glEnd();
+        */
+
+        // Draw the front face (triangle ABC)
+        glBegin(GL_TRIANGLES);
+            glColor3f(1.0f, 0.75f, 0.0f);
+            glVertex3f(-0.33f, -0.74f, 0.25f); // A
+            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+            glVertex3f(-0.25f, -0.74f, 0.75f); // C
+        glEnd();
+
+        // Draw the back face (triangle DEF)
+        glBegin(GL_TRIANGLES);
+            glColor3f(0.95f, 0.55f, 0.16f);
+            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+            glVertex3f(0.2f, -1.25f, 0.25f);   // E
+            glVertex3f(0.25f, -0.74f, 0.75f);  // F
+        glEnd();
+
+        // Draw the bottom rectangle (ABED)
+        glBegin(GL_QUADS);
+        glColor3f(1.0f, 0.67f, 0.11f);
+            glVertex3f(-0.33f, -0.74f, 0.25f); // A
+            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+            glVertex3f(0.2f, -1.25f, 0.25f);   // E
+            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+        glEnd();
+
+        // Draw the vertical side (ACFD)
+        glBegin(GL_QUADS);
+        glColor3f(0.96f, 0.73f, 0.27f);
+            glColor3f(1.0f, 0.75f, 0.0f);
+            glVertex3f(-0.33f, -0.74f, 0.25f); // A
+            glVertex3f(-0.25f, -0.74f, 0.75f); // C
+            glVertex3f(0.25f, -0.74f, 0.75f);  // F
+            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+        glEnd();
+
+        // Draw the slanted side (BCFE)
+        glBegin(GL_QUADS);
+        glColor3f(1.0f, 0.65f, 0.0f);
+            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
+            glVertex3f(-0.25f, -0.74f, 0.75f); // C
+            glVertex3f(0.25f, -0.74f, 0.75f);  // F
+            glVertex3f(0.2f, -1.25f, 0.25f);   // E
+        glEnd();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    {
+        glPointSize(10.0);
+        glTranslatef(0.0f, 0.75f, -0.2f);
+        glScalef(1.5f, 1.75f, 1.5f);
+
+        // Left eye
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glTranslatef(-0.25f, -0.4f, 0.75f);
+        glutSolidSphere(0.05f, 50, 50);
+
+        // Right eye
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glTranslatef(0.5f, 0.0f, 0.0f);
+        glutSolidSphere(0.05f, 50, 50);
+    }
+    glPopMatrix();
+
+}
+
 void drawNeckWithStackedSpheres() {
     /*
     curved neck with spheres stacking each other
@@ -490,8 +612,11 @@ void drawNeckWithStackedSpheres() {
         }
 
         // Draw the head at the end of the neck
-        glTranslatef(0.0f, neckLength, neckLength * sin(M_PI * neckCurve));
-        glutSolidSphere(tipRadius * 1.5f, 30, 30); // Goose's head
+        glTranslatef(0.0f, neckLength + 0.3f, neckLength * sin(M_PI * neckCurve) - 0.2f);
+        glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
+        glScalef(0.5f, 0.5f, 0.5f);
+        drawHead();
+        drawBeak();
     }
     glPopMatrix();
 }
@@ -675,56 +800,6 @@ void drawGround() {
     glEnd();
 
     glDisable(GL_TEXTURE_2D); // Disable texturing
-}
-
-void drawWalls() {
-    // Enable lighting if not already enabled
-    glEnable(GL_LIGHTING);
-
-    // Set wall material so it reflects light well
-    GLfloat wall_ambient[]  = {0.2f, 0.2f, 0.2f, 1.0f};
-    GLfloat wall_diffuse[]  = {0.7f, 0.7f, 0.7f, 1.0f};
-    GLfloat wall_specular[] = {0.2f, 0.2f, 0.2f, 1.0f};
-    GLfloat wall_shininess[] = {10.0f};
-
-    glMaterialfv(GL_FRONT, GL_AMBIENT, wall_ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, wall_diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, wall_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, wall_shininess);
-
-    // Coordinates for walls
-    float groundSize = 5.0f;  // same size as the ground
-    float wallHeight = 3.0f;  // how high the walls go above the ground
-
-    // Back wall: spanning x = -5 to x = 5 at y = 5
-    // Normal points inward (towards negative Y)
-    glBegin(GL_QUADS);
-    glNormal3f(0.0f, -1.0f, 0.0f);
-    glVertex3f(-groundSize,  groundSize, -0.5f);
-    glVertex3f( groundSize,  groundSize, -0.5f);
-    glVertex3f( groundSize,  groundSize, wallHeight);
-    glVertex3f(-groundSize,  groundSize, wallHeight);
-    glEnd();
-
-    // Left wall: spanning y = -5 to y = 5 at x = -5
-    // Normal points inward (towards positive X)
-    glBegin(GL_QUADS);
-    glNormal3f(1.0f, 0.0f, 0.0f);
-    glVertex3f(-groundSize, -groundSize, -0.5f);
-    glVertex3f(-groundSize,  groundSize, -0.5f);
-    glVertex3f(-groundSize,  groundSize, wallHeight);
-    glVertex3f(-groundSize, -groundSize, wallHeight);
-    glEnd();
-
-    // Right wall: spanning y = -5 to y = 5 at x = 5
-    // Normal points inward (towards negative X)
-    glBegin(GL_QUADS);
-    glNormal3f(-1.0f, 0.0f, 0.0f);
-    glVertex3f( groundSize, -groundSize, -0.5f);
-    glVertex3f( groundSize,  groundSize, -0.5f);
-    glVertex3f( groundSize,  groundSize, wallHeight);
-    glVertex3f( groundSize, -groundSize, wallHeight);
-    glEnd();
 }
 
 void drawWire(float length) {
@@ -916,6 +991,22 @@ void updateLightAnimation(int value) {
     glutPostRedisplay(); // Redraw the scene with updated lighting
 }
 
+void movingNeck(int value)
+{
+    if (value == 1 && neckBow < 30)
+    {
+        neckBow += 1;
+        glutPostRedisplay();
+        glutTimerFunc(16, movingNeck, value);
+    }
+    else if (value == 0 && neckBow > 0)
+    {
+        neckBow -= 1;
+        glutPostRedisplay();
+        glutTimerFunc(16, movingNeck, value);
+    }
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
@@ -945,7 +1036,6 @@ void display() {
     setupFog();
     setupAdditionalLights();
     drawGround();
-    //drawWalls();
 
     //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
     glPushMatrix();
@@ -990,11 +1080,12 @@ void display() {
 
     glPushMatrix();
     {
-        glTranslatef(0.0f, 0.3f, 0.05f);
+        glTranslatef(0.0f, 0.3f, -0.05f);
         glRotatef(-neckBow, 1.0f, 0.0f, 0.0f);
         drawNeckWithStackedSpheres();
     }
     glPopMatrix();
+
     glPushMatrix();
     {
         drawTailWithTaperedTriangles();
@@ -1034,59 +1125,33 @@ void display() {
     glutSwapBuffers();
 }
 
-void movingNeck(int value)
-{
-    if (value == 1 && neckBow < 30)
-    {
-        neckBow += 1;
-        glutPostRedisplay();
-        glutTimerFunc(16, movingNeck, value);
-    }
-    else if (value == 0 && neckBow > 0)
-    {
-        neckBow -= 1;
-        glutPostRedisplay();
-        glutTimerFunc(16, movingNeck, value);
-    }
-}
-
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'Z':
     case 'z':
         if (zoom < 10.0f) zoom += 0.1f;
         break;    // Zoom in
-    case 'X':
     case 'x':
         if (zoom > 4.0f) zoom -= 0.1f;
         break;
-    case 'O':
     case 'o':
         // Toggle light on/off
         lightOn = !lightOn;
         glutPostRedisplay();
         break;
-    case 'L':
     case 'l': // Handle lighting animation
-        if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
-            if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
-                isFadingOut = true; // Start fading out
-            } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
-                isFadingIn = true; // Start fading in
+            if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
+                if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
+                    isFadingOut = true; // Start fading out
+                } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
+                    isFadingIn = true; // Start fading in
+                }
+                glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
             }
-            glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
-        }
-        break;
-    case 'A':
+            break;
     case 'a':
         if (isBowing == 0) {isBowing = 1;}
         else {isBowing = 0;}
         glutTimerFunc(16, movingNeck, isBowing);
-        break;
-    case 27:
-        exit(0);
-        break;
-    default:
         break;
     }
     glutPostRedisplay();
