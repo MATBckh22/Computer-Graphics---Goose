@@ -16,6 +16,7 @@ int maxAngle = 83;
 float placed = 0.17f;
 int neckBow = 0;
 int isBowing = 0;
+bool normalmode = false;
 
 float wireLength = 0.0f;      // Current length of the wire
 const float maxWireLength = 4.0f; // Maximum wire length
@@ -61,6 +62,7 @@ GLuint loadTexture(const char* filename) {
 
 void init() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
+
     stbi_set_flip_vertically_on_load(true);
     /*
     Remember to change the document name path into your version...
@@ -806,6 +808,16 @@ void drawGround() {
     glDisable(GL_TEXTURE_2D); // Disable texturing
 }
 
+void updateBackgroundColor() {
+    if (normalmode) {
+        // Light blue sky
+        glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
+    } else {
+        // Dark (black) background
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+}
+
 void drawWire(float length) {
     GLUquadric* quad = gluNewQuadric();
 
@@ -887,7 +899,6 @@ void setupMaterial()
     glMaterialfv(GL_FRONT, GL_DIFFUSE,   matDiffuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
     glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
-    //glEnable(GL_COLOR_MATERIAL);
 }
 
 void setupAdditionalLights() {
@@ -916,15 +927,6 @@ void setupAdditionalLights() {
     glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
 
     glEnable(GL_LIGHT2);
-}
-
-void setupFog() {
-    GLfloat fogColor[] = {0.2f, 0.2f, 0.2f, 1.0f}; // Soft gray fog
-    glFogi(GL_FOG_MODE, GL_EXP2); // Exponential squared fog for a smooth density
-    glFogfv(GL_FOG_COLOR, fogColor);
-    glFogf(GL_FOG_DENSITY, 0.05f); // Adjust density for desired softness
-    glHint(GL_FOG_HINT, GL_DONT_CARE); // Let OpenGL choose the fog quality
-    glEnable(GL_FOG);
 }
 
 void updateLightAnimation(int value)
@@ -999,18 +1001,23 @@ void display() {
         glDisable(GL_ALPHA_TEST);
     }
 
+
     // Setup lighting based on current state
     setupLighting();
 
     // Setup material based on current state
     setupMaterial();
     setupAdditionalLights();
-
     if (lightBrightness < 0.31){
         glEnable(GL_COLOR_MATERIAL);
     }
     else {
         glDisable(GL_COLOR_MATERIAL);
+    }
+    if (normalmode)
+    {
+        glEnable(GL_COLOR_MATERIAL);
+        glDisable(GL_LIGHTING);
     }
 
     drawGround();
@@ -1121,6 +1128,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
         glutPostRedisplay();
         break;
     case 'l': // Handle lighting animation
+        if (normalmode) break; // skip when daylight
         glEnable(GL_LIGHTING);
         if (!isFadingIn && !isFadingOut && lightBrightness < MAX_BRIGHTNESS) {
             isFadingIn = true;
@@ -1135,6 +1143,12 @@ void handleKeyboard(unsigned char key, int x, int y) {
         if (isBowing == 0) {isBowing = 1;}
         else {isBowing = 0;}
         glutTimerFunc(16, movingNeck, isBowing);
+        break;
+    case 'n':
+        if (normalmode) glDisable(GL_COLOR_MATERIAL); // to disable color material every daytime
+        normalmode = !normalmode;
+        updateBackgroundColor();
+        glutPostRedisplay();
         break;
     }
     glutPostRedisplay();
