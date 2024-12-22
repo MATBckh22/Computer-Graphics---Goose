@@ -25,8 +25,8 @@ bool charging = false;
 
 // Brightness control variables
 float lightBrightness = 0.3f; // Initial brightness (dim)
-const float MAX_BRIGHTNESS = 0.8f;
-const float MIN_BRIGHTNESS = 0.0f;
+const float MAX_BRIGHTNESS = 1.0f;
+const float MIN_BRIGHTNESS = 0.3f;
 
 bool isFadingIn = false;   // Indicates if the light is fading in
 bool isFadingOut = false;  // Indicates if the light is fading out
@@ -496,8 +496,8 @@ void drawBeak()
     glPushMatrix();
     {
         glColor3f(1.0f, 0.0f, 1.0f);
-        glTranslatef(0.0f, 0.39f, -0.15f);
-        glScalef(1.5f, 1.2f, 1.5f);
+        glTranslatef(0.0f, 0.75f, -0.16f);
+        glScalef(1.5f, 1.7f, 1.5f);
 
         // for debug
         /*
@@ -513,46 +513,46 @@ void drawBeak()
 
         // Draw the front face (triangle ABC)
         glBegin(GL_TRIANGLES);
-            glColor3f(1.0f, 0.75f, 0.0f);
-            glVertex3f(-0.33f, -0.74f, 0.25f); // A
-            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
-            glVertex3f(-0.25f, -0.74f, 0.75f); // C
+        glColor3f(1.0f, 0.75f, 0.0f);
+            glVertex3f(-0.33f, -0.74f, 0.25f);  // A
+            glVertex3f(-0.2f, -1.25f, 0.3f);    // B
+            glVertex3f(-0.25f, -0.74f, 0.75f);  // C
         glEnd();
 
         // Draw the back face (triangle DEF)
         glBegin(GL_TRIANGLES);
-            glColor3f(0.95f, 0.55f, 0.16f);
-            glVertex3f(0.33f, -0.74f, 0.25f);  // D
-            glVertex3f(0.2f, -1.25f, 0.25f);   // E
-            glVertex3f(0.25f, -0.74f, 0.75f);  // F
+        glColor3f(0.95f, 0.55f, 0.16f);
+            glVertex3f(0.33f, -0.74f, 0.25f);   // D
+            glVertex3f(0.2f, -1.25f, 0.3f);     // E
+            glVertex3f(0.25f, -0.74f, 0.75f);   // F
         glEnd();
 
         // Draw the bottom rectangle (ABED)
         glBegin(GL_QUADS);
         glColor3f(1.0f, 0.67f, 0.11f);
-            glVertex3f(-0.33f, -0.74f, 0.25f); // A
-            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
-            glVertex3f(0.2f, -1.25f, 0.25f);   // E
-            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+            glVertex3f(-0.33f, -0.74f, 0.25f);  // A
+            glVertex3f(-0.2f, -1.25f, 0.25f);   // B
+            glVertex3f(0.2f, -1.25f, 0.25f);    // E
+            glVertex3f(0.33f, -0.74f, 0.25f);   // D
         glEnd();
 
         // Draw the vertical side (ACFD)
         glBegin(GL_QUADS);
         glColor3f(0.96f, 0.73f, 0.27f);
-            glColor3f(1.0f, 0.75f, 0.0f);
-            glVertex3f(-0.33f, -0.74f, 0.25f); // A
-            glVertex3f(-0.25f, -0.74f, 0.75f); // C
-            glVertex3f(0.25f, -0.74f, 0.75f);  // F
-            glVertex3f(0.33f, -0.74f, 0.25f);  // D
+        glColor4f(1.0f, 0.75f, 0.0f, 0.7f);
+            glVertex3f(-0.33f, -0.74f, 0.25f);  // A
+            glVertex3f(-0.25f, -0.74f, 0.75f);  // C
+            glVertex3f(0.25f, -0.74f, 0.75f);   // F
+            glVertex3f(0.33f, -0.74f, 0.25f);   // D
         glEnd();
 
         // Draw the slanted side (BCFE)
         glBegin(GL_QUADS);
         glColor3f(1.0f, 0.65f, 0.0f);
-            glVertex3f(-0.2f, -1.25f, 0.25f);  // B
-            glVertex3f(-0.25f, -0.74f, 0.75f); // C
-            glVertex3f(0.25f, -0.74f, 0.75f);  // F
-            glVertex3f(0.2f, -1.25f, 0.25f);   // E
+            glVertex3f(-0.2f, -1.25f, 0.3f);    // B
+            glVertex3f(-0.25f, -0.74f, 0.75f);  // C
+            glVertex3f(0.25f, -0.74f, 0.75f);   // F
+            glVertex3f(0.2f, -1.25f, 0.3f);     // E
         glEnd();
     }
     glPopMatrix();
@@ -564,12 +564,12 @@ void drawBeak()
         glScalef(1.5f, 1.75f, 1.5f);
 
         // Left eye
-        glColor3f(0.0f, 0.0f, 1.0f);
+        glColor3f(0.0f, 0.0f, 0.0f);
         glTranslatef(-0.25f, -0.4f, 0.75f);
         glutSolidSphere(0.05f, 50, 50);
 
         // Right eye
-        glColor3f(0.0f, 0.0f, 1.0f);
+        glColor3f(0.0f, 0.0f, 0.0f);
         glTranslatef(0.5f, 0.0f, 0.0f);
         glutSolidSphere(0.05f, 50, 50);
     }
@@ -608,6 +608,7 @@ void drawNeckWithStackedSpheres() {
             glPushMatrix();
             {
                 glTranslatef(x, y, z);
+                glColor4f(1.0f, 1.0f, 1.0f, 0.2f); // White colour with 80% transparency
                 glutSolidSphere(radius, 20, 20);
             }
             glPopMatrix();
@@ -617,6 +618,7 @@ void drawNeckWithStackedSpheres() {
         glTranslatef(0.0f, neckLength + 0.3f, neckLength * sin(M_PI * neckCurve) - 0.2f);
         glRotatef(180.0f, 0.0f, 0.0f, 1.0f);
         glScalef(0.5f, 0.5f, 0.5f);
+        glColor4f(1.0f, 1.0f, 1.0f, 0.7f); // White colour with 30% transparency
         drawHead();
         drawBeak();
     }
@@ -777,7 +779,7 @@ void drawGround() {
     glEnable(GL_TEXTURE_2D); // Enable texturing
     glBindTexture(GL_TEXTURE_2D, groundTexture); // Bind the ground texture
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glColor3f(1.0f, 1.0f, 1.0f); // Ensure the texture color is used
+    glColor3f(0.5f, 0.5f, 0.5f); // Ensure the texture color is used
 
     glBegin(GL_QUADS);
     {
@@ -843,89 +845,49 @@ void animateWire(int value) {
     }
 }
 
-void setupLighting() {
-    if (lightOn) {
-        // Set a low global ambient light for a softer overall lighting
-        GLfloat global_ambient[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Very low ambient
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+void setupLighting()
+{
+    // Always enable lighting so we can fade in/out smoothly
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 
-        // Set up light properties based on current brightness
-        GLfloat light_ambient[]  = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.15f * lightBrightness, 1.0f}; // Warm ambient
-        GLfloat light_diffuse[]  = {0.6f * lightBrightness, 0.5f * lightBrightness, 0.3f * lightBrightness, 1.0f}; // Warm diffuse
-        GLfloat light_specular[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Soft specular
+    // A little global ambient, so the scene is never completely black
+    GLfloat globalAmbient[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbient);
 
-        // Position the light at the object's location (assuming object is at origin)
-        // light from below
-        GLfloat light_position[] = {0.0f, 0.0f, -1.0f, 1.0f}; // Adjust Y and Z as needed
+    // Scale these by lightBrightness to fade the light up or down
+    GLfloat lightAmbient[]  = {0.2f * lightBrightness, 0.2f * lightBrightness, 0.2f * lightBrightness, 1.0f}; // Warm ambient
+    GLfloat lightDiffuse[]  = {0.2f * lightBrightness, 0.2f * lightBrightness, 0.2f * lightBrightness, 1.0f}; // Warm diffuse
+    GLfloat lightSpecular[] = {0.1f, 0.1f, 0.1f, 1.0f}; // Soft specular
 
-        // Attenuation factors for smoother light fall-off
-        GLfloat light_constant_attenuation = 0.5f;
-        GLfloat light_linear_attenuation = 0.05f;
-        GLfloat light_quadratic_attenuation = 0.01f;
+    // You can position this light wherever it makes sense in your scene
+    GLfloat lightPosition[] = { 0.0f, 0.0f, -1.0f, 1.0f };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
-        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    // Set the current scaled colors for this light
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  lightAmbient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  lightDiffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
 
-        // Set attenuation
-        glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, light_constant_attenuation);
-        glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, light_linear_attenuation);
-        glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, light_quadratic_attenuation);
-
-        glEnable(GL_LIGHTING);
-        glEnable(GL_LIGHT0);
-    } else {
-        // When light is off, set light0's ambient and diffuse to zero
-        GLfloat light_ambient_off[]  = {0.0f, 0.0f, 0.0f, 1.0f};
-        GLfloat light_diffuse_off[]  = {0.0f, 0.0f, 0.0f, 1.0f};
-        GLfloat light_specular_off[] = {0.0f, 0.0f, 0.0f, 1.0f};
-
-        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient_off);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse_off);
-        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular_off);
-
-        // Optionally, adjust global ambient if needed
-        GLfloat global_ambient_off[] = {0.3f, 0.3f, 0.3f, 1.0f}; // Low ambient to render gray
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient_off);
-
-        glEnable(GL_LIGHTING);
-        glEnable(GL_LIGHT0);
-    }
+    // Optional attenuation settings
+    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.5f);
+    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION,   0.05f);
+    glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION,0.01f);
 }
 
-void setupMaterial() {
-    if (lightOn) {
-        // Set material properties with emission based on brightness
-        GLfloat mat_ambient[]    = {0.4f, 0.35f, 0.3f, 1.0f}; // Slightly warmer ambient
-        GLfloat mat_diffuse[]    = {0.7f, 0.65f, 0.6f, 1.0f}; // Slightly warmer diffuse
-        GLfloat mat_specular[]   = {0.9f, 0.85f, 0.75f, 1.0f}; // Soft specular
-        GLfloat mat_shininess[]  = {20.0f}; // Reduced shininess for softer highlights
+void setupMaterial()
+{
+    // Some default "brownish" color for the goose if color material is off
+    GLfloat matAmbient[]   = {0.6f, 0.5f, 0.3f, 1.0f};
+    GLfloat matDiffuse[]   = {0.6f, 0.5f, 0.3f, 1.0f};
+    GLfloat matSpecular[]  = {0.2f, 0.2f, 0.2f, 1.0f};
+    GLfloat matShininess[] = {32.0f};
 
-        // Calculate emission color based on brightness (warm yellow)
-        GLfloat mat_emission[]   = {0.3f * lightBrightness, 0.25f * lightBrightness, 0.1f * lightBrightness, 1.0f};
-
-        glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-        glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
-    } else {
-        // Set material to gray with 30% transparency
-        GLfloat mat_ambient[]    = {0.8f, 0.8f, 0.8f, 0.9f}; // Gray ambient with alpha 0.7
-        GLfloat mat_diffuse[]    = {0.8f, 0.8f, 0.8f, 0.9f}; // Gray diffuse with alpha 0.7
-        GLfloat mat_specular[]   = {0.2f, 0.2f, 0.2f, 0.7f}; // Low specular with alpha 0.7
-        GLfloat mat_shininess[]  = {10.0f}; // Low shininess for softer highlights
-
-        // No emission when light is off
-        GLfloat mat_emission[]   = {0.0f, 0.0f, 0.0f, 1.0f};
-
-        glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-        glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-        glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-        glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
-    }
+    glMaterialfv(GL_FRONT, GL_AMBIENT,   matAmbient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE,   matDiffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
+    //glEnable(GL_COLOR_MATERIAL);
 }
 
 void setupAdditionalLights() {
@@ -965,32 +927,40 @@ void setupFog() {
     glEnable(GL_FOG);
 }
 
-void updateLightAnimation(int value) {
-    const float brightnessStep = 0.02f; // Adjust step size for speed of animation
+void updateLightAnimation(int value)
+{
+    // Controls how fast brightness changes each frame
+    const float brightnessStep = 0.02f;
 
+    // Fade In
     if (isFadingIn) {
         lightBrightness += brightnessStep;
         if (lightBrightness >= MAX_BRIGHTNESS) {
             lightBrightness = MAX_BRIGHTNESS;
-            lightOn = true;
-            isFadingIn = false; // Animation complete
+            isFadingIn = false;       // Done fading in
         } else {
-            glutTimerFunc(16, updateLightAnimation, 0); // Continue fading in
+            // Keep scheduling next frame
+            glutTimerFunc(16, updateLightAnimation, 0);
         }
     }
+    // Fade Out
     else if (isFadingOut) {
         lightBrightness -= brightnessStep;
         if (lightBrightness <= MIN_BRIGHTNESS) {
             lightBrightness = MIN_BRIGHTNESS;
-            lightOn = false;
-            isFadingOut = false; // Animation complete
+            isFadingOut = false;      // Done fading out
         } else {
-            glutTimerFunc(16, updateLightAnimation, 0); // Continue fading out
+            // Keep scheduling next frame
+            glutTimerFunc(16, updateLightAnimation, 0);
         }
     }
 
-    setupLighting(); // Update lighting configuration with new brightness
-    glutPostRedisplay(); // Redraw the scene with updated lighting
+    // Re-apply the new brightness to the OpenGL light
+    setupLighting();
+    setupAdditionalLights();
+
+    // Redraw the scene with new lighting values
+    glutPostRedisplay();
 }
 
 void movingNeck(int value)
@@ -1034,16 +1004,23 @@ void display() {
 
     // Setup material based on current state
     setupMaterial();
-
-    setupFog();
     setupAdditionalLights();
+
+    if (lightBrightness < 0.31){
+        glEnable(GL_COLOR_MATERIAL);
+    }
+    else {
+        glDisable(GL_COLOR_MATERIAL);
+    }
+
     drawGround();
 
-    //glRotatef(angleV, 0.0f, 1.0f, 0.0f);
+
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
         glRotatef(90, 0.0f, 1.0f, 0.0f);
+        glColor4f(1.0f, 1.0f, 1.0f, 0.7f); // White colour with 30% transparency
         drawSphereWithFlatBottom(1.1f, 0.6f, 0.9f, 36, 36, 0.67f);
     }glPopMatrix(); // Sphere with flat bottom starting at 80% height
 
@@ -1052,6 +1029,7 @@ void display() {
         glTranslatef(0.9f, 0.3f, 0.3f);
         glRotatef(90, 1.0f, 0.0f, 0.0f);
         glRotatef(-wingAngle, 0.0f, 0.0f, 1.0f);
+        glColor4f(1.0f, 1.0f, 1.0f, 0.7f); // White colour with 30% transparency
         drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 5*M_PI/6);
         glPushMatrix();{
             glTranslatef(0.0f, 0.5f, 0.0f);
@@ -1069,6 +1047,7 @@ void display() {
             glTranslatef(0.9f, -0.3f, 0.3f);
             glRotatef(90, 1.0f, 0.0f, 0.0f);
             glRotatef(-wingAngle, 0.0f, 0.0f, 1.0f);
+            glColor4f(1.0f, 1.0f, 1.0f, 0.7f); // White colour with 30% transparency
             drawPartialTorus(0.1f, 0.4f, 0.4f, 30, 30, -3*M_PI/2, 5*M_PI/6);
             glPushMatrix();{
                 glRotatef(180, 0.0f, 1.0f, 0.0f);
@@ -1090,6 +1069,7 @@ void display() {
 
     glPushMatrix();
     {
+        glColor4f(1.0f, 1.0f, 1.0f, 0.7f); // White colour with 30% transparency
         drawTailWithTaperedTriangles();
     }
     glPopMatrix();
@@ -1141,15 +1121,16 @@ void handleKeyboard(unsigned char key, int x, int y) {
         glutPostRedisplay();
         break;
     case 'l': // Handle lighting animation
-            if (!isFadingIn && !isFadingOut) { // Only respond if no animation is in progress
-                if (lightOn && lightBrightness > MIN_BRIGHTNESS) {
-                    isFadingOut = true; // Start fading out
-                } else if (!lightOn && lightBrightness < MAX_BRIGHTNESS) {
-                    isFadingIn = true; // Start fading in
-                }
-                glutTimerFunc(16, updateLightAnimation, 0); // Start the animation (~60 FPS)
-            }
-            break;
+        glEnable(GL_LIGHTING);
+        if (!isFadingIn && !isFadingOut && lightBrightness < MAX_BRIGHTNESS) {
+            isFadingIn = true;
+            glutTimerFunc(16, updateLightAnimation, 0);
+        }
+        if (!isFadingIn && !isFadingOut && lightBrightness > MIN_BRIGHTNESS) {
+            isFadingOut = true;
+            glutTimerFunc(16, updateLightAnimation, 0);
+        }
+        break;
     case 'a':
         if (isBowing == 0) {isBowing = 1;}
         else {isBowing = 0;}
