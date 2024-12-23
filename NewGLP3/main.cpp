@@ -1,8 +1,9 @@
 #include <windows.h>
 #include <GL/glut.h>
 #include <cmath>
+#include <stdio.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include "D:/Downloads/stb_image.h"
+#include "d:/downloads/stb_image.h"
 
 float angleH  = 0.0f;
 float height = 0.0f;               // Rotation angles
@@ -16,7 +17,7 @@ int maxAngle = 83;
 float placed = 0.17f;
 int neckBow = 0;
 int isBowing = 0;
-bool normalmode = false;
+bool normalmode = true;
 
 float wireLength = 0.0f;      // Current length of the wire
 const float maxWireLength = 4.0f; // Maximum wire length
@@ -34,6 +35,22 @@ bool isFadingOut = false;  // Indicates if the light is fading out
 
 // Light state variable
 bool lightOn = false; // Light is initially on
+
+// Font to be used for rendering text
+const void* font = GLUT_BITMAP_TIMES_ROMAN_24;
+
+// Instructions strings
+char zoomIn[] = "z: zoom in";
+char zoomOut[] = "x: zoom out";
+char dayTime[] = "n: nighttime";
+char nightTime[] = "n: daytime";
+char lighting[] = "l: light on/light off";
+char bowingNeck[] = "a: toggle neck angle";
+char rotateUp[] = "Arrow Up: rotate down";
+char rotateDown[] = "Arrow Down: rotate up";
+char rotateLeft[] = "Arrow Left: rotate right";
+char rotateRight[] = "Arrow Right: rotate left";
+char mouseClick[] = "Mouse Click: animation";
 
 GLuint texture, texture2, groundTexture;
 GLuint loadTexture(const char* filename) {
@@ -61,7 +78,7 @@ GLuint loadTexture(const char* filename) {
 }
 
 void init() {
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(0.4, 0.6, 1.0, 1.0);
 
     stbi_set_flip_vertically_on_load(true);
     /*
@@ -517,7 +534,7 @@ void drawBeak()
         glBegin(GL_TRIANGLES);
         glColor3f(1.0f, 0.75f, 0.0f);
             glVertex3f(-0.33f, -0.74f, 0.25f);  // A
-            glVertex3f(-0.2f, -1.25f, 0.3f);    // B
+            glVertex3f(-0.2f, -1.25f, 0.25);    // B
             glVertex3f(-0.25f, -0.74f, 0.75f);  // C
         glEnd();
 
@@ -525,7 +542,7 @@ void drawBeak()
         glBegin(GL_TRIANGLES);
         glColor3f(0.95f, 0.55f, 0.16f);
             glVertex3f(0.33f, -0.74f, 0.25f);   // D
-            glVertex3f(0.2f, -1.25f, 0.3f);     // E
+            glVertex3f(0.2f, -1.25f, 0.25f);     // E
             glVertex3f(0.25f, -0.74f, 0.75f);   // F
         glEnd();
 
@@ -551,10 +568,10 @@ void drawBeak()
         // Draw the slanted side (BCFE)
         glBegin(GL_QUADS);
         glColor3f(1.0f, 0.65f, 0.0f);
-            glVertex3f(-0.2f, -1.25f, 0.3f);    // B
+            glVertex3f(-0.2f, -1.25f, 0.25f);    // B
             glVertex3f(-0.25f, -0.74f, 0.75f);  // C
             glVertex3f(0.25f, -0.74f, 0.75f);   // F
-            glVertex3f(0.2f, -1.25f, 0.3f);     // E
+            glVertex3f(0.2f, -1.25f, 0.25f);     // E
         glEnd();
     }
     glPopMatrix();
@@ -981,9 +998,91 @@ void movingNeck(int value)
     }
 }
 
+// Render strings of texts
+void renderBitmapString(float x, float y, void* font, const char* string) {
+    const char* c;                      // Pointer to iterate through the characters in the string
+    glRasterPos2f(x, y);             // Set the position where the text starts
+    for (c = string; *c != '\0'; c++)   // Loop through each character in the string
+    {
+        glutBitmapCharacter(font, *c);  // Render the current character
+    }
+}
+
+// Generate text function
+void generateText() {
+    renderBitmapString(20, 575, (void*)font, zoomIn);
+    renderBitmapString(20, 550, (void*)font, zoomOut);
+
+    if (normalmode)
+        renderBitmapString(20, 525, (void*)font, dayTime);
+    else
+        renderBitmapString(20, 525, (void*)font, nightTime);
+
+    renderBitmapString(20, 500, (void*)font, lighting);
+    renderBitmapString(20, 475, (void*)font, bowingNeck);
+    renderBitmapString(20, 450, (void*)font, rotateUp);
+    renderBitmapString(20, 425, (void*)font, rotateDown);
+    renderBitmapString(20, 400, (void*)font, rotateLeft);
+    renderBitmapString(20, 375, (void*)font, rotateRight);
+    renderBitmapString(20, 350, (void*)font, mouseClick);
+}
+
+void makeShadowMatrix(GLfloat shadowMat[16],
+                      const GLfloat groundPlane[4],
+                      const GLfloat lightPos[4])
+{
+    // Dot product of plane and light
+    GLfloat dot = groundPlane[0] * lightPos[0] +
+                  groundPlane[1] * lightPos[1] +
+                  groundPlane[2] * lightPos[2] +
+                  groundPlane[3] * lightPos[3];
+
+    // Clear out the matrix
+    for (int i = 0; i < 16; i++) {
+        shadowMat[i] = 0.0f;
+    }
+    // Row by row
+    shadowMat[0]  = dot - lightPos[0] * groundPlane[0];
+    shadowMat[4]  =       - lightPos[0] * groundPlane[1];
+    shadowMat[8]  =       - lightPos[0] * groundPlane[2];
+    shadowMat[12] =       - lightPos[0] * groundPlane[3];
+
+    shadowMat[1]  =       - lightPos[1] * groundPlane[0];
+    shadowMat[5]  = dot - lightPos[1] * groundPlane[1];
+    shadowMat[9]  =       - lightPos[1] * groundPlane[2];
+    shadowMat[13] =       - lightPos[1] * groundPlane[3];
+
+    shadowMat[2]  =       - lightPos[2] * groundPlane[0];
+    shadowMat[6]  =       - lightPos[2] * groundPlane[1];
+    shadowMat[10] = dot - lightPos[2] * groundPlane[2];
+    shadowMat[14] =       - lightPos[2] * groundPlane[3];
+
+    shadowMat[3]  =       - lightPos[3] * groundPlane[0];
+    shadowMat[7]  =       - lightPos[3] * groundPlane[1];
+    shadowMat[11] =       - lightPos[3] * groundPlane[2];
+    shadowMat[15] = dot - lightPos[3] * groundPlane[3];
+}
+
 void display() {
+    int w = 800, h = 600;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffers
+
+    // Enable depth testing for 3D rendering
+    glEnable(GL_DEPTH_TEST);
+
+    // Set perspective projection for 3D rendering
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, (float)w / h, 0.1, 100.0);
+
+    // Model-view matrix for 3D rendering
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    /*
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
+    */
     // Adjust the camera
     gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
               0.0, 1.0, 0.0,
@@ -1000,7 +1099,6 @@ void display() {
         glDisable(GL_BLEND);
         glDisable(GL_ALPHA_TEST);
     }
-
 
     // Setup lighting based on current state
     setupLighting();
@@ -1021,7 +1119,6 @@ void display() {
     }
 
     drawGround();
-
 
     glPushMatrix();
     {
@@ -1111,6 +1208,83 @@ void display() {
             drawWire(wireLength);
         }
 
+    GLfloat groundPlane[4] = {0.0f, 0.0f, 1.0f, 0.5f};
+    float zLightPos;
+    if (normalmode) zLightPos = 10.0f;
+    else if (!lightOn) zLightPos = -5.0f;
+    else {
+        // Map lightBrightness [MIN_BRIGHTNESS, MAX_BRIGHTNESS] to zLightPos [5.0, 1.0]
+        // Higher brightness -> lower zLightPos (closer light) -> bigger shadow
+        float scale = (lightBrightness - MIN_BRIGHTNESS) / (MAX_BRIGHTNESS - MIN_BRIGHTNESS);
+        zLightPos = 5.0f - scale * 4.0f; // Adjust 5.0 and 1.0 as needed
+    }
+    GLfloat lightPos[4] = {0.0f, 0.0f, zLightPos, 1.0f};
+    printf("%d", lightOn);
+
+    // Define the cube position relative to the goose
+    GLfloat cubePosX = 2.0f; // 1 unit to the right of the origin
+    GLfloat cubePosY = 1.5f; // Adjust based on how you want it placed vertically
+    GLfloat cubePosZ = -0.25f;
+
+    // Draw the cube
+    glPushMatrix();
+    {
+        glTranslatef(cubePosX, cubePosY, cubePosZ);
+        glColor3f(0.2f, 0.2f, 0.2f); // Color of the cube
+        glutSolidCube(0.4); // Cube with side length 1.0
+    }
+    glPopMatrix();
+
+    // Compute the shadow matrix based on the updated ground plane and light position
+    GLfloat shadowMat[16];
+    makeShadowMatrix(shadowMat, groundPlane, lightPos);
+
+    // Draw the shadow of the cube
+    glPushMatrix();
+    {
+        // Apply the shadow matrix to project the shadow onto the ground
+        glMultMatrixf(shadowMat);
+
+        // Translate to the cube's position
+        glTranslatef(cubePosX, cubePosY, cubePosZ);
+
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(-0.01f, -0.01f); // These values may need tweaking
+
+        // Render the shadow as a darkened cube
+        glColor3f(0.0f, 0.0f, 0.0f); // Shadow color
+        glutSolidCube(0.4); // Same size as the original cube
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
+    glPopMatrix();
+
+    // Disable depth testing for 2D overlay
+    glDisable(GL_DEPTH_TEST);
+
+    // Set orthographic projection for 2D rendering
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 0, 600); // Match window dimensions
+
+    // Render 2D fixed text
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    // Call text function
+    if (normalmode) {
+        glColor3f(0.0f, 0.0f, 0.0f); //  Black colour
+        generateText();
+    }
+    else {
+        glColor3f(1.0f, 1.0f, 1.0f); // White colour
+        generateText();
+    }
+
+    // Restore the perspective projection
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
     glutSwapBuffers();
 }
 
@@ -1121,11 +1295,6 @@ void handleKeyboard(unsigned char key, int x, int y) {
         break;    // Zoom in
     case 'x':
         if (zoom > 4.0f) zoom -= 0.1f;
-        break;
-    case 'o':
-        // Toggle light on/off
-        lightOn = !lightOn;
-        glutPostRedisplay();
         break;
     case 'l': // Handle lighting animation
         if (normalmode) break; // skip when daylight
@@ -1138,6 +1307,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
             isFadingOut = true;
             glutTimerFunc(16, updateLightAnimation, 0);
         }
+        lightOn = !lightOn;
         break;
     case 'a':
         if (isBowing == 0) {isBowing = 1;}
