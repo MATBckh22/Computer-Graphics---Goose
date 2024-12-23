@@ -45,10 +45,10 @@ char dayTime[] = "n: nighttime";
 char nightTime[] = "n: daytime";
 char lighting[] = "l: light on/light off";
 char bowingNeck[] = "a: toggle neck angle";
-char rotateUp[] = "Arrow Up: rotate down";
-char rotateDown[] = "Arrow Down: rotate up";
-char rotateLeft[] = "Arrow Left: rotate right";
-char rotateRight[] = "Arrow Right: rotate left";
+char rotateUp[] = "Arrow Up: move up";
+char rotateDown[] = "Arrow Down: move down";
+char rotateLeft[] = "Arrow Left: move left";
+char rotateRight[] = "Arrow Right: move right";
 char mouseClick[] = "Mouse Click: animation";
 
 GLuint texture, texture2, groundTexture;
