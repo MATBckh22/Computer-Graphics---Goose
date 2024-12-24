@@ -1079,10 +1079,6 @@ void display() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    /*
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    */
     // Adjust the camera
     gluLookAt(zoom*sin(angleH), height, zoom*cos(angleH),
               0.0, 1.0, 0.0,
@@ -1100,12 +1096,11 @@ void display() {
         glDisable(GL_ALPHA_TEST);
     }
 
-    // Setup lighting based on current state
     setupLighting();
-
-    // Setup material based on current state
     setupMaterial();
     setupAdditionalLights();
+    
+    // Handle model color
     if (lightBrightness < 0.31){
         glEnable(GL_COLOR_MATERIAL);
     }
@@ -1120,6 +1115,7 @@ void display() {
 
     drawGround();
 
+    // Draw goose
     glPushMatrix();
     {
         glRotatef(90, 1.0f, 0.0f, 0.0f);
@@ -1219,7 +1215,6 @@ void display() {
         zLightPos = 5.0f - scale * 4.0f; // Adjust 5.0 and 1.0 as needed
     }
     GLfloat lightPos[4] = {0.0f, 0.0f, zLightPos, 1.0f};
-    printf("%d", lightOn);
 
     // Define the cube position relative to the goose
     GLfloat cubePosX = 2.0f; // 1 unit to the right of the origin
